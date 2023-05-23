@@ -1,5 +1,5 @@
 [package]
-name = "pyreoxide-example"
+name = "pyroxide-example"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,5 +7,5 @@ edition = "2021"
 version = "0.18.3"
 features = ["auto-initialize"]
 
-[dependencies.pyreoxide]
-path = "../pyreoxide"
+[dependencies.pyroxide]
+path = "../pyroxide"

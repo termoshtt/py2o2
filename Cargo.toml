@@ -1,5 +1,5 @@
 [workspace]
 members = [
-  "pyreoxide",
-  "pyreoxide-example",
+  "pyroxide",
+  "pyroxide-example",
 ]
