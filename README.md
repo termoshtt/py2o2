@@ -1,4 +1,4 @@
-pybindgen
+pyreoxide
 ==========
 Create Rust binding fron Python type annotations
 
