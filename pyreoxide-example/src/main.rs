@@ -1,16 +1,15 @@
 use pyo3::prelude::*;
-use pyo3::types::IntoPyDict;
 
 fn main() -> PyResult<()> {
     Python::with_gil(|py| {
+        // Append current directory `.` to sys.path
         let sys = py.import("sys")?;
-        let version: String = sys.getattr("version")?.extract()?;
+        let paths = sys.getattr("path")?;
+        paths.call_method("append", ("",), None)?;
 
-        let locals = [("os", py.import("os")?)].into_py_dict(py);
-        let code = "os.getenv('USER') or os.getenv('USERNAME') or 'Unknown'";
-        let user: String = py.eval(code, None, Some(&locals))?.extract()?;
-
-        println!("Hello {}, I'm Python {}", user, version);
+        let ex = py.import("example")?;
+        let a1 = ex.getattr("a1")?;
+        a1.call0()?;
         Ok(())
     })
 }

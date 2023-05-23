@@ -1,5 +1,5 @@
 def a1():
-    pass
+    print("Hello from a1!")
 
 
 def a2(x: int):
