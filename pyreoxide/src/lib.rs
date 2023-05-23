@@ -19,7 +19,7 @@ mod tests {
 
     #[test]
     fn test_wit_parser() {
-        let test_wit = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test.wit");
+        let test_wit = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../test.wit");
         let interfaces = get_interfaces(&test_wit).unwrap();
         dbg!(interfaces);
     }
