@@ -1,8 +1,4 @@
-[package]
-name = "pyreoxide"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-anyhow = "1.0.71"
-wit-parser = "0.7.1"
+[workspace]
+members = [
+  "pyreoxide",
+]
