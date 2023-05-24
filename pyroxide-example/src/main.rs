@@ -2,18 +2,8 @@ use pyo3::prelude::*;
 
 pub mod example {
     use pyo3::prelude::*;
-
-    fn load_pymodule(py: Python<'_>) -> PyResult<&PyModule> {
-        // Append current directory `.` to sys.path
-        let sys = py.import("sys")?;
-        let paths = sys.getattr("path")?;
-        paths.call_method("append", ("",), None)?;
-
-        py.import("example")
-    }
-
     pub fn a1(py: Python<'_>) -> PyResult<()> {
-        let m = load_pymodule(py)?;
+        let m = py.import("example")?;
         let a1 = m.getattr("a1")?;
         a1.call0()?;
         Ok(())
@@ -21,6 +11,12 @@ pub mod example {
 }
 
 fn main() -> PyResult<()> {
+    // Add a path where `example.py` exists
+    let project_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap();
+    std::env::set_var("PYTHONPATH", project_root);
+
     Python::with_gil(|py| {
         example::a1(py)?;
         Ok(())
