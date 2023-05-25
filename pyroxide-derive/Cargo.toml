@@ -1,0 +1,16 @@
+[package]
+name = "pyroxide-derive"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies.pyroxide]
+path = "../pyroxide"
+
+[dependencies]
+proc-macro-error = "1.0.4"
+proc-macro2 = "1.0.28"
+quote = "1.0.9"
+syn = { version = "1.0.75", features = ["full", "extra-traits"] }

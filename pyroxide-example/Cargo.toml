@@ -7,5 +7,5 @@ edition = "2021"
 version = "0.18.3"
 features = ["auto-initialize"]
 
-[dependencies.pyroxide]
-path = "../pyroxide"
+[dependencies.pyroxide-derive]
+path = "../pyroxide-derive"

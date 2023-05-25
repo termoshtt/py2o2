@@ -1,5 +1,7 @@
 use pyo3::prelude::*;
 
+pyroxide_derive::import!(example);
+
 pub mod example {
     use pyo3::{prelude::*, types::PyString};
 
