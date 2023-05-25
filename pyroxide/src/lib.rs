@@ -12,7 +12,7 @@ pub fn import(_input: TokenStream) -> TokenStream {
     quote! {}.into()
 }
 
-fn as_rust_type(ty: &wit_parser::Type) -> syn::Type {
+fn as_input_type(ty: &wit_parser::Type) -> syn::Type {
     match ty {
         wit_parser::Type::S64 => syn::parse_quote!(i64),
         wit_parser::Type::U64 => syn::parse_quote!(u64),
@@ -27,8 +27,23 @@ fn as_rust_type(ty: &wit_parser::Type) -> syn::Type {
     }
 }
 
+fn as_output_type(ty: &wit_parser::Type) -> syn::Type {
+    match ty {
+        wit_parser::Type::S64 => syn::parse_quote!(i64),
+        wit_parser::Type::U64 => syn::parse_quote!(u64),
+        wit_parser::Type::Float64 => syn::parse_quote!(f64),
+        wit_parser::Type::Float32 => syn::parse_quote!(f32),
+        wit_parser::Type::String => syn::parse_quote!(&'py PyString),
+        _ => {
+            // FIXME
+            eprintln!("Unsupported type: {:?}", ty);
+            syn::parse_quote!(())
+        }
+    }
+}
+
 fn as_rust_tuple(params: &[(String, wit_parser::Type)]) -> syn::Type {
-    let params: Vec<syn::Type> = params.iter().map(|(_, ty)| as_rust_type(ty)).collect();
+    let params: Vec<syn::Type> = params.iter().map(|(_, ty)| as_output_type(ty)).collect();
     syn::parse_quote!((#(#params),*))
 }
 
@@ -47,16 +62,32 @@ fn generate_from_wit(wit_path: &Path) -> TokenStream2 {
                 .map(|(name, _)| syn::Ident::new(name, Span::call_site()))
                 .collect();
             let param_types: Vec<syn::Type> =
-                f.params.iter().map(|(_, ty)| as_rust_type(ty)).collect();
+                f.params.iter().map(|(_, ty)| as_input_type(ty)).collect();
             let input_tt = quote!(#(#param_names: #param_types),*);
 
             let output = match &f.results {
                 wit_parser::Results::Named(params) => as_rust_tuple(params),
-                wit_parser::Results::Anon(ty) => as_rust_type(ty),
+                wit_parser::Results::Anon(ty) => as_output_type(ty),
             };
+
+            let call_tt = quote! {
+                py.import(#module_name)?.getattr(#name)?.call((#(#param_names,)*), None)?
+            };
+            let inner_tt = if output == syn::parse_quote!(()) {
+                quote! {
+                    let _ = #call_tt;
+                    Ok(())
+                }
+            } else {
+                quote! {
+                    let result = #call_tt;
+                    Ok(result.extract()?)
+                }
+            };
+
             f_tt.push(quote! {
                 pub fn #ident<'py>(py: Python<'py>, #input_tt) -> PyResult<#output> {
-                    todo!()
+                    #inner_tt
                 }
             });
         }
@@ -92,9 +123,7 @@ mod tests {
     }
 
     fn format(tt: TokenStream2) -> String {
-        let input = tt.to_string();
-        eprintln!("{}", input);
-        prettyplease::unparse(&syn::parse_file(&input).unwrap())
+        prettyplease::unparse(&syn::parse_file(&dbg!(tt.to_string())).unwrap())
     }
 
     #[test]
