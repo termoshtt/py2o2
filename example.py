@@ -12,11 +12,11 @@ def a3(y: str, z: float):
 
 
 def a4() -> int:
-    pass
+    return 4
 
 
 def a5(x: int) -> str:
-    pass
+    return "x is " + str(x)
 
 
 def a6() -> (int, str):
