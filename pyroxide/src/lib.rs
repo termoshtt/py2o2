@@ -12,7 +12,50 @@ pub fn import(_input: TokenStream) -> TokenStream {
     quote! {}.into()
 }
 
-fn generate_from_wit(_wit_path: &Path) -> TokenStream2 {
+fn as_rust_type(ty: &wit_parser::Type) -> syn::Type {
+    match ty {
+        wit_parser::Type::S64 => syn::parse_quote!(i64),
+        wit_parser::Type::U64 => syn::parse_quote!(u64),
+        wit_parser::Type::Float64 => syn::parse_quote!(f64),
+        wit_parser::Type::Float32 => syn::parse_quote!(f32),
+        wit_parser::Type::String => syn::parse_quote!(&str),
+        _ => {
+            // FIXME
+            eprintln!("Unsupported type: {:?}", ty);
+            syn::parse_quote!(())
+        }
+    }
+}
+
+fn as_rust_params(params: &[(String, wit_parser::Type)]) -> Vec<(String, syn::Type)> {
+    params
+        .iter()
+        .map(|(name, ty)| (name.clone(), as_rust_type(ty)))
+        .collect()
+}
+
+fn as_rust_tuple(params: &[(String, wit_parser::Type)]) -> syn::Type {
+    let params: Vec<syn::Type> = params.iter().map(|(_, ty)| as_rust_type(ty)).collect();
+    syn::parse_quote!((#(#params),*))
+}
+
+fn generate_from_wit(wit_path: &Path) -> TokenStream2 {
+    let interfaces = get_interfaces(wit_path).unwrap();
+    for interface in interfaces {
+        let module_name = &interface.name;
+        for (function_name, f) in interface.functions {
+            dbg!(module_name, function_name);
+            let input = as_rust_params(&f.params);
+            let output = match &f.results {
+                wit_parser::Results::Named(params) => as_rust_tuple(params),
+                wit_parser::Results::Anon(ty) => as_rust_type(ty),
+            };
+            dbg!(input, output);
+        }
+    }
+
+    panic!();
+
     quote! {
     pub mod example {
         use pyo3::{prelude::*, types::PyString};
@@ -87,7 +130,7 @@ mod tests {
     }
 
     #[test]
-    fn test_wit() {
+    fn generate_from_test_wit() {
         let project_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .unwrap();
