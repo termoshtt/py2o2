@@ -39,11 +39,6 @@ pub mod example {
         let result = py.import("example")?.getattr("a7")?.call((x,), None)?;
         Ok(result.extract()?)
     }
-
-    pub fn a8<'py>(py: Python<'py>, x: (i64, &str)) -> PyResult<(i64, &'py PyString, (i64, f64))> {
-        let result = py.import("example")?.getattr("a8")?.call((x,), None)?;
-        Ok(result.extract()?)
-    }
 }
 
 fn main() -> PyResult<()> {
@@ -64,7 +59,6 @@ fn main() -> PyResult<()> {
         dbg!(example::a5(py, 33)?);
         dbg!(example::a6(py)?);
         dbg!(example::a7(py, 112)?);
-        dbg!(example::a8(py, (8, "a8"))?);
         Ok(())
     })
 }

@@ -163,13 +163,6 @@ mod tests {
                 let result = py.import("example")?.getattr("a7")?.call((x,), None)?;
                 Ok(result.extract()?)
             }
-            pub fn a8<'py>(
-                py: Python<'py>,
-                x: (i64, &str),
-            ) -> PyResult<(i64, &'py PyString, (i64, f64))> {
-                let result = py.import("example")?.getattr("a8")?.call((x,), None)?;
-                Ok(result.extract()?)
-            }
         }
         "###);
     }
