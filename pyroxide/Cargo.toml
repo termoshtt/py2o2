@@ -3,6 +3,17 @@ name = "pyroxide"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+proc-macro = true
+
 [dependencies]
 anyhow = "1.0.71"
+proc-macro-error = "1.0.4"
+proc-macro2 = "1.0.58"
+quote = "1.0.27"
+syn = { version = "2", features = ["full", "extra-traits"] }
 wit-parser = "0.7.1"
+
+[dev-dependencies]
+insta = "1.29.0"
+prettyplease = "0.2.6"
