@@ -4,38 +4,43 @@ pub mod example {
     use pyo3::{prelude::*, types::PyString};
 
     pub fn a1(py: Python<'_>) -> PyResult<()> {
-        let m = py.import("example")?;
-        let a1 = m.getattr("a1")?;
-        a1.call((), None)?;
+        let _ = py.import("example")?.getattr("a1")?.call((), None)?;
         Ok(())
     }
 
     pub fn a2(py: Python<'_>, x: i64) -> PyResult<()> {
-        let m = py.import("example")?;
-        let a2 = m.getattr("a2")?;
-        a2.call((x,), None)?;
+        let _ = py.import("example")?.getattr("a2")?.call((x,), None)?;
         Ok(())
     }
 
     pub fn a3(py: Python<'_>, y: &str, z: f32) -> PyResult<()> {
-        let m = py.import("example")?;
-        let a3 = m.getattr("a3")?;
-        a3.call((y, z), None)?;
+        let _ = py.import("example")?.getattr("a3")?.call((y, z), None)?;
         Ok(())
     }
 
     pub fn a4(py: Python<'_>) -> PyResult<i64> {
-        let m = py.import("example")?;
-        let a4 = m.getattr("a4")?;
-        let out = a4.call((), None)?.extract()?;
-        Ok(out)
+        let result = py.import("example")?.getattr("a4")?.call((), None)?;
+        Ok(result.extract()?)
     }
 
     pub fn a5(py: Python<'_>, x: i64) -> PyResult<&PyString> {
-        let m = py.import("example")?;
-        let a5 = m.getattr("a5")?;
-        let out = a5.call((x,), None)?.extract()?;
-        Ok(out)
+        let result = py.import("example")?.getattr("a5")?.call((x,), None)?;
+        Ok(result.extract()?)
+    }
+
+    pub fn a6(py: Python<'_>) -> PyResult<(i64, &PyString)> {
+        let result = py.import("example")?.getattr("a6")?.call((), None)?;
+        Ok(result.extract()?)
+    }
+
+    pub fn a7(py: Python<'_>, x: i64) -> PyResult<(i64, &PyString, f64)> {
+        let result = py.import("example")?.getattr("a7")?.call((x,), None)?;
+        Ok(result.extract()?)
+    }
+
+    pub fn a8<'py>(py: Python<'py>, x: (i64, &str)) -> PyResult<(i64, &'py PyString, (i64, f64))> {
+        let result = py.import("example")?.getattr("a8")?.call((x,), None)?;
+        Ok(result.extract()?)
     }
 }
 
@@ -50,13 +55,14 @@ fn main() -> PyResult<()> {
         // No return value
         example::a1(py)?;
         example::a2(py, 57)?;
-        example::a3(py, "homhom", 3.1415)?;
+        example::a3(py, "homhom", 3.0)?;
 
         // With return values
-        let a4_out = example::a4(py)?;
-        dbg!(a4_out);
-        let a5_out = example::a5(py, 33)?;
-        dbg!(a5_out);
+        dbg!(example::a4(py)?);
+        dbg!(example::a5(py, 33)?);
+        dbg!(example::a6(py)?);
+        dbg!(example::a7(py, 112)?);
+        dbg!(example::a8(py, (8, "a8"))?);
         Ok(())
     })
 }
