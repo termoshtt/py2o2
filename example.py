@@ -3,11 +3,12 @@ def a1():
 
 
 def a2(x: int):
-    pass
+    print(f"x = {x}")
 
 
 def a3(y: str, z: float):
-    pass
+    print(f"y = {y}")
+    print(f"z = {z}")
 
 
 def a4() -> int:
