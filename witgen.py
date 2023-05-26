@@ -53,19 +53,19 @@ def type_as_tag_primitive(ty: type) -> str:
     return ""
 
 
-def main() -> int:
-    if len(sys.argv) <= 1:
-        print(f"usage: {sys.argv[0]} <your_module.py>")
-        return 1
-    target = sys.argv[1].removesuffix(".py")
+def witgen(target: str) -> str:
+    """
+    Load Python module named as given `target`,
+    and generate WIT IDL
+    """
     module = importlib.import_module(target)
 
     functions = [
         name for name, attr in inspect.getmembers(module) if inspect.isfunction(attr)
     ]
 
-    print(f"interface {target}")
-    print("{")
+    buffer = []
+    buffer.append(f"interface {target} {{")
     for name in functions:
         f = getattr(module, name).__annotations__
         if "return" in f:
@@ -80,8 +80,17 @@ def main() -> int:
             if i:
                 i += ", "
             i += f"{key}: {ty}"
-        print(f"{name}: func({i}) {o}")
-    print("}")
+        buffer.append(f"{name}: func({i}) {o}")
+    buffer.append("}")
+    return "\n".join(buffer)
+
+
+def main() -> int:
+    if len(sys.argv) <= 1:
+        print(f"usage: {sys.argv[0]} <your_module.py>", file=sys.stderr)
+        return 1
+    target = sys.argv[1].removesuffix(".py")
+    print(witgen(target))
     return 0
 
 
