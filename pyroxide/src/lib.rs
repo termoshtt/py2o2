@@ -4,13 +4,28 @@ use proc_macro2::{Span, TokenStream as TokenStream2};
 use proc_macro_error::*;
 use pyo3::{prelude::*, types::PyString};
 use quote::quote;
-use std::collections::HashMap;
-use std::path::Path;
+use std::{
+    collections::HashMap,
+    fs,
+    path::{Path, PathBuf},
+};
 
 #[proc_macro_error]
 #[proc_macro]
-pub fn import(_input: TokenStream) -> TokenStream {
-    quote! {}.into()
+pub fn import(input: TokenStream) -> TokenStream {
+    let target: syn::Ident = syn::parse(input).unwrap();
+    let target = target.to_string();
+    let out = save_wit(&target).unwrap();
+    generate_from_wit(&out).into()
+}
+
+fn save_wit(target: &str) -> Result<PathBuf> {
+    let wit = witgen(&target.to_string())?;
+    let out_dir = dirs::cache_dir().unwrap().join("pyroxide");
+    fs::create_dir_all(&out_dir)?;
+    let path = Path::new(&out_dir).join(format!("{}.wit", target));
+    fs::write(&path, wit)?;
+    Ok(path)
 }
 
 fn as_input_type(ty: &wit_parser::Type) -> syn::Type {
@@ -94,6 +109,7 @@ fn generate_from_wit(wit_path: &Path) -> TokenStream2 {
         }
         tt.push(quote! {
             pub mod #module_ident {
+                use pyo3::{prelude::*, types::PyString};
                 #(#f_tt)*
             }
         })
@@ -168,31 +184,31 @@ mod tests {
         insta::assert_snapshot!(format(tt), @r###"
         pub mod example {
             use pyo3::{prelude::*, types::PyString};
-            pub fn a1(py: Python<'_>) -> PyResult<()> {
+            pub fn a1<'py>(py: Python<'py>) -> PyResult<()> {
                 let _ = py.import("example")?.getattr("a1")?.call((), None)?;
                 Ok(())
             }
-            pub fn a2(py: Python<'_>, x: i64) -> PyResult<()> {
+            pub fn a2<'py>(py: Python<'py>, x: i64) -> PyResult<()> {
                 let _ = py.import("example")?.getattr("a2")?.call((x,), None)?;
                 Ok(())
             }
-            pub fn a3(py: Python<'_>, y: &str, z: f32) -> PyResult<()> {
+            pub fn a3<'py>(py: Python<'py>, y: &str, z: f64) -> PyResult<()> {
                 let _ = py.import("example")?.getattr("a3")?.call((y, z), None)?;
                 Ok(())
             }
-            pub fn a4(py: Python<'_>) -> PyResult<i64> {
+            pub fn a4<'py>(py: Python<'py>) -> PyResult<i64> {
                 let result = py.import("example")?.getattr("a4")?.call((), None)?;
                 Ok(result.extract()?)
             }
-            pub fn a5(py: Python<'_>, x: i64) -> PyResult<&PyString> {
+            pub fn a5<'py>(py: Python<'py>, x: i64) -> PyResult<&'py PyString> {
                 let result = py.import("example")?.getattr("a5")?.call((x,), None)?;
                 Ok(result.extract()?)
             }
-            pub fn a6(py: Python<'_>) -> PyResult<(i64, &PyString)> {
+            pub fn a6<'py>(py: Python<'py>) -> PyResult<(i64, &'py PyString)> {
                 let result = py.import("example")?.getattr("a6")?.call((), None)?;
                 Ok(result.extract()?)
             }
-            pub fn a7(py: Python<'_>, x: i64) -> PyResult<(i64, &PyString, f64)> {
+            pub fn a7<'py>(py: Python<'py>, x: i64) -> PyResult<(i64, &'py PyString, f64)> {
                 let result = py.import("example")?.getattr("a7")?.call((x,), None)?;
                 Ok(result.extract()?)
             }
