@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 
-pyroxide::import!(example);
+include!(concat!(env!("OUT_DIR"), "/example.rs"));
 
 fn main() -> PyResult<()> {
     // Add a path where `example.py` exists

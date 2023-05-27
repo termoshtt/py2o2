@@ -1,7 +1,5 @@
 use anyhow::Result;
-use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use proc_macro_error::*;
 use pyo3::{prelude::*, types::PyString};
 use quote::quote;
 use std::{
@@ -10,13 +8,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-#[proc_macro_error]
-#[proc_macro]
-pub fn import(input: TokenStream) -> TokenStream {
-    let target: syn::Ident = syn::parse(input).unwrap();
-    let target = target.to_string();
-    let out = save_wit(&target).unwrap();
-    generate_from_wit(&out).into()
+pub fn generate(python_module_name: &str) -> Result<String> {
+    let wit = save_wit(&python_module_name)?;
+    let generated = format(generate_from_wit(&wit)?);
+    Ok(generated)
+}
+
+fn format(tt: TokenStream2) -> String {
+    prettyplease::unparse(&syn::parse_file(&dbg!(tt.to_string())).unwrap())
 }
 
 fn save_wit(target: &str) -> Result<PathBuf> {
@@ -63,9 +62,9 @@ fn as_rust_tuple(params: &[(String, wit_parser::Type)]) -> syn::Type {
     syn::parse_quote!((#(#params),*))
 }
 
-fn generate_from_wit(wit_path: &Path) -> TokenStream2 {
+fn generate_from_wit(wit_path: &Path) -> Result<TokenStream2> {
     let mut tt = Vec::new();
-    let interfaces = get_interfaces(wit_path).unwrap();
+    let interfaces = get_interfaces(wit_path)?;
     for interface in interfaces {
         let module_name = interface.name.as_ref().unwrap();
         let module_ident = syn::Ident::new(module_name, Span::call_site());
@@ -114,7 +113,7 @@ fn generate_from_wit(wit_path: &Path) -> TokenStream2 {
             }
         })
     }
-    quote! { #(#tt)* }
+    Ok(quote! { #(#tt)* })
 }
 
 fn get_interfaces(path: &Path) -> Result<Vec<wit_parser::Interface>> {
@@ -171,16 +170,12 @@ mod tests {
         "###);
     }
 
-    fn format(tt: TokenStream2) -> String {
-        prettyplease::unparse(&syn::parse_file(&dbg!(tt.to_string())).unwrap())
-    }
-
     #[test]
     fn generate_from_test_wit() {
         let project_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .unwrap();
-        let tt = generate_from_wit(&project_root.join("test.wit"));
+        let tt = generate_from_wit(&project_root.join("test.wit")).unwrap();
         insta::assert_snapshot!(format(tt), @r###"
         pub mod example {
             use pyo3::{prelude::*, types::PyString};
