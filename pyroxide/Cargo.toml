@@ -10,6 +10,7 @@ proc-macro = true
 anyhow = "1.0.71"
 proc-macro-error = "1.0.4"
 proc-macro2 = "1.0.58"
+pyo3 = { version = "0.18.3", features = ["auto-initialize"] }
 quote = "1.0.27"
 syn = { version = "2", features = ["full", "extra-traits"] }
 wit-parser = "0.7.1"

@@ -2,6 +2,7 @@ use anyhow::Result;
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use proc_macro_error::*;
+use pyo3::{prelude::*, types::PyString};
 use quote::quote;
 use std::collections::HashMap;
 use std::path::Path;
@@ -111,6 +112,16 @@ fn get_interfaces(path: &Path) -> Result<Vec<wit_parser::Interface>> {
         .collect())
 }
 
+fn witgen(target: &str) -> Result<String> {
+    const WITGEN_PY: &str = include_str!("../../witgen.py");
+    Ok(Python::with_gil(|py| -> PyResult<String> {
+        let m = PyModule::from_code(py, WITGEN_PY, "", "")?;
+        let f = m.getattr("witgen")?;
+        let wit: &PyString = f.call1((target,))?.extract()?;
+        Ok(wit.to_string())
+    })?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -120,6 +131,28 @@ mod tests {
         let test_wit = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../test.wit");
         let interfaces = get_interfaces(&test_wit).unwrap();
         dbg!(interfaces);
+    }
+
+    #[test]
+    fn test_witgen_example() {
+        // Add a path where `example.py` exists
+        let project_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap();
+        std::env::set_var("PYTHONPATH", project_root);
+
+        let wit = witgen("example").unwrap();
+        insta::assert_snapshot!(wit, @r###"
+        interface example {
+        a1: func() 
+        a2: func(x: s64) 
+        a3: func(y: string, z: float64) 
+        a4: func() -> s64
+        a5: func(x: s64) -> string
+        a6: func() -> (out0: s64, out1: string)
+        a7: func(x: s64) -> (out0: s64, out1: string, out2: float64)
+        }
+        "###);
     }
 
     fn format(tt: TokenStream2) -> String {
