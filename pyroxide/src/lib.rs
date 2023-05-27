@@ -9,17 +9,17 @@ use std::{
 };
 
 pub fn generate(python_module_name: &str) -> Result<String> {
-    let wit = save_wit(&python_module_name)?;
+    let wit = save_wit(python_module_name)?;
     let generated = format(generate_from_wit(&wit)?);
     Ok(generated)
 }
 
 fn format(tt: TokenStream2) -> String {
-    prettyplease::unparse(&syn::parse_file(&dbg!(tt.to_string())).unwrap())
+    prettyplease::unparse(&syn::parse_file(&tt.to_string()).unwrap())
 }
 
 fn save_wit(target: &str) -> Result<PathBuf> {
-    let wit = witgen(&target.to_string())?;
+    let wit = witgen(target)?;
     let out_dir = dirs::cache_dir().unwrap().join("pyroxide");
     fs::create_dir_all(&out_dir)?;
     let path = Path::new(&out_dir).join(format!("{}.wit", target));
@@ -34,11 +34,7 @@ fn as_input_type(ty: &wit_parser::Type) -> syn::Type {
         wit_parser::Type::Float64 => syn::parse_quote!(f64),
         wit_parser::Type::Float32 => syn::parse_quote!(f32),
         wit_parser::Type::String => syn::parse_quote!(&str),
-        _ => {
-            // FIXME
-            eprintln!("Unsupported type: {:?}", ty);
-            syn::parse_quote!(())
-        }
+        _ => unimplemented!(),
     }
 }
 
@@ -49,11 +45,7 @@ fn as_output_type(ty: &wit_parser::Type) -> syn::Type {
         wit_parser::Type::Float64 => syn::parse_quote!(f64),
         wit_parser::Type::Float32 => syn::parse_quote!(f32),
         wit_parser::Type::String => syn::parse_quote!(&'py PyString),
-        _ => {
-            // FIXME
-            eprintln!("Unsupported type: {:?}", ty);
-            syn::parse_quote!(())
-        }
+        _ => unimplemented!(),
     }
 }
 
