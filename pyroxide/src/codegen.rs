@@ -1,7 +1,6 @@
 use anyhow::Result;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
-use std::path::Path;
 
 fn format(tt: TokenStream2) -> String {
     prettyplease::unparse(&syn::parse_file(&tt.to_string()).unwrap())
@@ -34,14 +33,13 @@ fn as_rust_tuple(params: &[(String, wit_parser::Type)]) -> syn::Type {
     syn::parse_quote!((#(#params),*))
 }
 
-pub fn generate_from_wit(wit_path: &Path) -> Result<String> {
+pub fn generate_from_wit(interfaces: &[wit_parser::Interface]) -> Result<String> {
     let mut tt = Vec::new();
-    let interfaces = crate::wit::get_interfaces(wit_path)?;
     for interface in interfaces {
         let module_name = interface.name.as_ref().unwrap();
         let module_ident = syn::Ident::new(module_name, Span::call_site());
         let mut f_tt = Vec::new();
-        for (name, f) in interface.functions {
+        for (name, f) in &interface.functions {
             let ident = syn::Ident::new(&name, Span::call_site());
             let param_names: Vec<_> = f
                 .params
@@ -97,7 +95,8 @@ mod test {
         let project_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .unwrap();
-        let tt = generate_from_wit(&project_root.join("test.wit")).unwrap();
+        let interfaces = crate::wit::parse(&project_root.join("test.wit")).unwrap();
+        let tt = generate_from_wit(&interfaces).unwrap();
         insta::assert_snapshot!(tt, @r###"
         pub mod example {
             use pyo3::{prelude::*, types::PyString};
