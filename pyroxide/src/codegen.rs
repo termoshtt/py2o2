@@ -40,7 +40,7 @@ pub fn generate_from_wit(interfaces: &[wit_parser::Interface]) -> Result<String>
         let module_ident = syn::Ident::new(module_name, Span::call_site());
         let mut f_tt = Vec::new();
         for (name, f) in &interface.functions {
-            let ident = syn::Ident::new(&name, Span::call_site());
+            let ident = syn::Ident::new(name, Span::call_site());
             let param_names: Vec<_> = f
                 .params
                 .iter()
