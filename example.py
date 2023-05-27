@@ -25,8 +25,3 @@ def a6() -> (int, str):
 
 def a7(x: int) -> (int, str, float):
     return 2 * x, "x si " + str(x), float(x)
-
-
-def a8(x: (int, str)) -> (int, str, (int, float)):
-    y, z = x
-    return y, str(x), (y * y, float(y))

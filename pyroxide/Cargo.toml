@@ -5,4 +5,13 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
+dirs = "5.0.1"
+prettyplease = "0.2.6"
+proc-macro2 = "1.0.58"
+pyo3 = { version = "0.18.3", features = ["auto-initialize"] }
+quote = "1.0.27"
+syn = { version = "2", features = ["full", "extra-traits"] }
 wit-parser = "0.7.1"
+
+[dev-dependencies]
+insta = "1.29.0"

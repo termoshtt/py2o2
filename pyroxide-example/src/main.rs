@@ -1,48 +1,6 @@
 use pyo3::prelude::*;
 
-pub mod example {
-    use pyo3::{prelude::*, types::PyString};
-
-    pub fn a1(py: Python<'_>) -> PyResult<()> {
-        let _ = py.import("example")?.getattr("a1")?.call((), None)?;
-        Ok(())
-    }
-
-    pub fn a2(py: Python<'_>, x: i64) -> PyResult<()> {
-        let _ = py.import("example")?.getattr("a2")?.call((x,), None)?;
-        Ok(())
-    }
-
-    pub fn a3(py: Python<'_>, y: &str, z: f32) -> PyResult<()> {
-        let _ = py.import("example")?.getattr("a3")?.call((y, z), None)?;
-        Ok(())
-    }
-
-    pub fn a4(py: Python<'_>) -> PyResult<i64> {
-        let result = py.import("example")?.getattr("a4")?.call((), None)?;
-        Ok(result.extract()?)
-    }
-
-    pub fn a5(py: Python<'_>, x: i64) -> PyResult<&PyString> {
-        let result = py.import("example")?.getattr("a5")?.call((x,), None)?;
-        Ok(result.extract()?)
-    }
-
-    pub fn a6(py: Python<'_>) -> PyResult<(i64, &PyString)> {
-        let result = py.import("example")?.getattr("a6")?.call((), None)?;
-        Ok(result.extract()?)
-    }
-
-    pub fn a7(py: Python<'_>, x: i64) -> PyResult<(i64, &PyString, f64)> {
-        let result = py.import("example")?.getattr("a7")?.call((x,), None)?;
-        Ok(result.extract()?)
-    }
-
-    pub fn a8<'py>(py: Python<'py>, x: (i64, &str)) -> PyResult<(i64, &'py PyString, (i64, f64))> {
-        let result = py.import("example")?.getattr("a8")?.call((x,), None)?;
-        Ok(result.extract()?)
-    }
-}
+include!(concat!(env!("OUT_DIR"), "/example.rs"));
 
 fn main() -> PyResult<()> {
     // Add a path where `example.py` exists
@@ -62,7 +20,6 @@ fn main() -> PyResult<()> {
         dbg!(example::a5(py, 33)?);
         dbg!(example::a6(py)?);
         dbg!(example::a7(py, 112)?);
-        dbg!(example::a8(py, (8, "a8"))?);
         Ok(())
     })
 }
