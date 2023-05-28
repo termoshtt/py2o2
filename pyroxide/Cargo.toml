@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
+clap = { version = "4.3.0", features = ["derive"] }
 dirs = "5.0.1"
 prettyplease = "0.2.6"
 proc-macro2 = "1.0.58"
