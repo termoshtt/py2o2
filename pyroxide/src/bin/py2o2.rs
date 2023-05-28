@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use std::path::Path;
 
@@ -11,8 +11,12 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     let path = Path::new(&cli.python_module_name_or_path);
     let module_name = if path.exists() {
-        std::env::set_var("PYTHONPATH", path.parent().unwrap());
-        let name = path.file_name().unwrap().to_str().unwrap();
+        std::env::set_var("PYTHONPATH", path.canonicalize().unwrap().parent().unwrap());
+        let name = path
+            .file_name()
+            .unwrap()
+            .to_str()
+            .context("Non UTF-8 filename")?;
         if let Some(inner) = name.strip_suffix(".py") {
             inner.to_string()
         } else {
