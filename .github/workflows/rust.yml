@@ -15,13 +15,23 @@ jobs:
       with:
         command: test
 
-  run:
+  cli:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
     - uses: actions-rs/cargo@v1
       with:
         command: run
+        args: --bin py2o2 example.py
+
+  example:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/cargo@v1
+      with:
+        command: run
+        args: --manifest-path=pyroxide-example/Cargo.toml
 
   check-format:
     runs-on: ubuntu-22.04
