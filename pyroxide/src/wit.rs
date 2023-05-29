@@ -50,7 +50,7 @@ mod tests {
         let project_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .unwrap();
-        std::env::set_var("PYTHONPATH", project_root);
+        std::env::set_var("PYTHONPATH", project_root.join("pyroxide-example"));
 
         let (wit, _path) = witgen("example").unwrap();
         insta::assert_snapshot!(wit, @r###"
