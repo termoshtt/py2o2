@@ -1,5 +1,4 @@
-interface example
-{
+interface example {
 a1: func() 
 a2: func(x: s64) 
 a3: func(y: string, z: float64) 
