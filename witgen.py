@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
 import inspect
 import importlib
 import sys
+import pathlib
 
 
 def tuple_as_named(ty: tuple) -> str:
@@ -89,8 +92,14 @@ def main() -> int:
     if len(sys.argv) <= 1:
         print(f"usage: {sys.argv[0]} <your_module.py>", file=sys.stderr)
         return 1
-    target = sys.argv[1].removesuffix(".py")
-    print(witgen(target))
+    path = pathlib.Path(sys.argv[1])
+    if path.exists():
+        # as single file module
+        sys.path.append(str(path.parent))
+        print(witgen(path.stem))
+    else:
+        # as installed module
+        print(str(path))
     return 0
 
 
