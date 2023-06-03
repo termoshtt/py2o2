@@ -2,7 +2,7 @@ use pyroxide::{codegen, wit};
 use std::path::Path;
 
 #[test]
-fn generate_from_test_wit() {
+fn wit_to_rust() {
     let interfaces =
         wit::parse(&Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/example.wit")).unwrap();
     let tt = codegen::generate_from_wit(&interfaces).unwrap();
@@ -39,4 +39,12 @@ fn generate_from_test_wit() {
             }
         }
         "###);
+}
+
+#[test]
+fn py_to_wit() {
+    let project_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    std::env::set_var("PYTHONPATH", project_root.join("tests"));
+    let (wit, _path) = wit::witgen("example").unwrap();
+    assert_eq!(wit, include_str!("example.wit").trim());
 }
