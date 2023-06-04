@@ -1,6 +1,6 @@
 pyroxide
 ==========
-Create Rust binding fron Python type annotations
+Create Rust binding from Python type annotations
 
 License
 --------
