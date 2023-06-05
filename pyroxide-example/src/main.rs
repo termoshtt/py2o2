@@ -4,10 +4,7 @@ include!(concat!(env!("OUT_DIR"), "/example.rs"));
 
 fn main() -> PyResult<()> {
     // Add a path where `example.py` exists
-    let project_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap();
-    std::env::set_var("PYTHONPATH", project_root);
+    std::env::set_var("PYTHONPATH", env!("CARGO_MANIFEST_DIR"));
 
     Python::with_gil(|py| {
         // No return value

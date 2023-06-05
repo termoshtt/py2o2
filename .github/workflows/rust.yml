@@ -22,7 +22,7 @@ jobs:
     - uses: actions-rs/cargo@v1
       with:
         command: run
-        args: --bin py2o2 example.py
+        args: --bin py2o2 pyroxide/tests/example.py
 
   example:
     runs-on: ubuntu-latest
