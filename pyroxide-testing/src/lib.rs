@@ -1,11 +1,13 @@
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::*};
+use anyhow::Result;
 
 include!(concat!(env!("OUT_DIR"), "/example.rs"));
 include!(concat!(env!("OUT_DIR"), "/type_aliases.rs"));
 
 const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
 
-fn main() -> PyResult<()> {
+#[test]
+fn example() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
 
     Python::with_gil(|py| {
@@ -19,6 +21,18 @@ fn main() -> PyResult<()> {
         dbg!(example::a5(py, 33)?);
         dbg!(example::a6(py)?);
         dbg!(example::a7(py, 112)?);
+        Ok(())
+    })
+}
+
+
+#[test]
+fn type_aliases() -> Result<()> {
+    std::env::set_var("PYTHONPATH", PYTHON_ROOT);
+
+    Python::with_gil(|py| {
+        let out = type_aliases::scale(py, 2.0, PyList::new(py, [1.0, 2.0, 3.0]))?;
+        dbg!(out);
         Ok(())
     })
 }

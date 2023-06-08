@@ -10,12 +10,11 @@ fn wit2rust() -> Result<()> {
     let tt = codegen::generate_from_wit(wit).unwrap();
     insta::assert_snapshot!(tt, @r###"
     pub mod type_aliases {
-        use pyo3::{prelude::*, types::PyString};
         pub fn scale<'py>(
-            py: Python<'py>,
+            py: ::pyo3::Python<'py>,
             scalar: f64,
-            vector: &[f64],
-        ) -> PyResult<&'py PyList> {
+            vector: &::pyo3::types::PyList,
+        ) -> ::pyo3::PyResult<&'py ::pyo3::types::PyList> {
             let result = py
                 .import("type-aliases")?
                 .getattr("scale")?

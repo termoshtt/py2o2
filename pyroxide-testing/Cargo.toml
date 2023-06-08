@@ -3,6 +3,9 @@ name = "pyroxide-testing"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+anyhow = "1"
+
 [dependencies.pyo3]
 version = "0.18.3"
 features = ["auto-initialize"]
