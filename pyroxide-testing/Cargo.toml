@@ -5,13 +5,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
-
-[dependencies.pyo3]
-version = "0.18.3"
-features = ["auto-initialize"]
+pyo3 = { version = "0.18.3", features = ["auto-initialize"] }
+pyroxide = { path = "../pyroxide" }
 
 [build-dependencies]
 anyhow = "1"
-
-[build-dependencies.pyroxide]
-path = "../pyroxide"
+pyroxide = { path = "../pyroxide" }

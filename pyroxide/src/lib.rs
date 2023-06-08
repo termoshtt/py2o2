@@ -9,3 +9,10 @@ pub fn generate(python_module_name: &str) -> Result<String> {
     let generated = codegen::generate_from_wit(interfaces)?;
     Ok(generated)
 }
+
+#[macro_export]
+macro_rules! import {
+    ($target:ident) => {
+        include!(concat!(env!("OUT_DIR"), "/", stringify!($target), ".rs"));
+    };
+}
