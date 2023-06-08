@@ -1,12 +1,13 @@
+use anyhow::Result;
 use pyroxide::{codegen, wit};
 use std::path::Path;
 
 const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
 
 #[test]
-fn wit2rust() {
-    let interfaces = wit::parse(&Path::new(PYTHON_ROOT).join("example.wit")).unwrap();
-    let tt = codegen::generate_from_wit(&interfaces).unwrap();
+fn wit2rust() -> Result<()> {
+    let wit = wit::parse(&Path::new(PYTHON_ROOT).join("example.wit"))?;
+    let tt = codegen::generate_from_wit(wit)?;
     insta::assert_snapshot!(tt, @r###"
         pub mod example {
             use pyo3::{prelude::*, types::PyString};
@@ -40,11 +41,22 @@ fn wit2rust() {
             }
         }
         "###);
+    Ok(())
 }
 
 #[test]
 fn py2wit() {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
     let (wit, _path) = wit::witgen("example").unwrap();
-    assert_eq!(wit, include_str!("example.wit").trim());
+    insta::assert_snapshot!(wit, @r###"
+    interface example {
+    a1: func() 
+    a2: func(x: s64) 
+    a3: func(y: string, z: float64) 
+    a4: func() -> s64
+    a5: func(x: s64) -> string
+    a6: func() -> (out0: s64, out1: string)
+    a7: func(x: s64) -> (out0: s64, out1: string, out2: float64)
+    }
+    "###);
 }
