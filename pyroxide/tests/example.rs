@@ -1,10 +1,11 @@
 use pyroxide::{codegen, wit};
 use std::path::Path;
 
+const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
+
 #[test]
-fn wit_to_rust() {
-    let interfaces =
-        wit::parse(&Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/example.wit")).unwrap();
+fn wit2rust() {
+    let interfaces = wit::parse(&Path::new(PYTHON_ROOT).join("example.wit")).unwrap();
     let tt = codegen::generate_from_wit(&interfaces).unwrap();
     insta::assert_snapshot!(tt, @r###"
         pub mod example {
@@ -42,9 +43,8 @@ fn wit_to_rust() {
 }
 
 #[test]
-fn py_to_wit() {
-    let project_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    std::env::set_var("PYTHONPATH", project_root.join("tests"));
+fn py2wit() {
+    std::env::set_var("PYTHONPATH", PYTHON_ROOT);
     let (wit, _path) = wit::witgen("example").unwrap();
     assert_eq!(wit, include_str!("example.wit").trim());
 }

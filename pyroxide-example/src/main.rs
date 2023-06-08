@@ -2,9 +2,10 @@ use pyo3::prelude::*;
 
 include!(concat!(env!("OUT_DIR"), "/example.rs"));
 
+const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
+
 fn main() -> PyResult<()> {
-    // Add a path where `example.py` exists
-    std::env::set_var("PYTHONPATH", env!("CARGO_MANIFEST_DIR"));
+    std::env::set_var("PYTHONPATH", PYTHON_ROOT);
 
     Python::with_gil(|py| {
         // No return value
