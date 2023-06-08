@@ -13,5 +13,4 @@ jobs:
     - uses: actions/checkout@v1
     - name: witgen
       run: |
-        ./witgen.py pyroxide/tests/example.py > example.wit
-        diff example.wit pyroxide/tests/example.wit
+        diff python/example.wit <(./witgen.py python/example.py)
