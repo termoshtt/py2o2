@@ -16,7 +16,7 @@ fn wit2rust() -> Result<()> {
             vector: &::pyo3::types::PyList,
         ) -> ::pyo3::PyResult<&'py ::pyo3::types::PyList> {
             let result = py
-                .import("type-aliases")?
+                .import("type_aliases")?
                 .getattr("scale")?
                 .call((scalar, vector), None)?;
             Ok(result.extract()?)

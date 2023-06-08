@@ -1,5 +1,7 @@
-use pyo3::{prelude::*, types::*};
+#![allow(dead_code, unused_imports)]
+
 use anyhow::Result;
+use pyo3::{prelude::*, types::*};
 
 include!(concat!(env!("OUT_DIR"), "/example.rs"));
 include!(concat!(env!("OUT_DIR"), "/type_aliases.rs"));
@@ -24,7 +26,6 @@ fn example() -> Result<()> {
         Ok(())
     })
 }
-
 
 #[test]
 fn type_aliases() -> Result<()> {
