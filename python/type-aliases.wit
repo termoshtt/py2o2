@@ -1,0 +1,3 @@
+interface type-aliases {
+scale: func(scalar: float64, vector: list<float64>) -> list<float64>
+}

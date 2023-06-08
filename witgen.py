@@ -4,6 +4,7 @@ import inspect
 import importlib
 import sys
 import pathlib
+import types
 
 
 def tuple_as_named(ty: tuple) -> str:
@@ -32,11 +33,22 @@ def tuple_as_list(ty: tuple) -> str:
     return "tuple<" + ", ".join(tags) + ">"
 
 
+def generic_alias(ty: types.GenericAlias) -> str:
+    if ty == types.GenericAlias(list, ty.__args__):
+        for ty_ in ty.__args__:
+            name = type_as_tag_inner(ty_)
+        return f"list<{name}>"
+    raise NotImplementedError("Type = %s" % type(ty))
+
+
 def type_as_tag_outer(ty) -> str:
     if type(ty) == type:
         return type_as_tag_primitive(ty)
     if type(ty) == tuple:
         return tuple_as_named(ty)
+    if type(ty) == types.GenericAlias:
+        return generic_alias(ty)
+    raise NotImplementedError("Type = %s" % type(ty))
 
 
 def type_as_tag_inner(ty) -> str:
@@ -44,6 +56,9 @@ def type_as_tag_inner(ty) -> str:
         return type_as_tag_primitive(ty)
     if type(ty) == tuple:
         return tuple_as_list(ty)
+    if type(ty) == types.GenericAlias:
+        return generic_alias(ty)
+    raise NotImplementedError("Type = %s" % type(ty))
 
 
 def type_as_tag_primitive(ty: type) -> str:
@@ -66,6 +81,7 @@ def witgen(target: str) -> str:
     functions = [
         name for name, attr in inspect.getmembers(module) if inspect.isfunction(attr)
     ]
+    target = target.replace("_", "-")
 
     buffer = []
     buffer.append(f"interface {target} {{")
@@ -99,7 +115,7 @@ def main() -> int:
         print(witgen(path.stem))
     else:
         # as installed module
-        print(str(path))
+        print(witgen(str(path)))
     return 0
 
 
