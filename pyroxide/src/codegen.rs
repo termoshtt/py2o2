@@ -57,7 +57,7 @@ fn as_output_type(
 pub fn generate_from_wit(wit: wit_parser::Resolve) -> Result<String> {
     let mut tt = Vec::new();
     for (_id, interface) in &wit.interfaces {
-        let module_name = interface.name.as_ref().unwrap().replace("-", "_");
+        let module_name = interface.name.as_ref().unwrap().replace('-', "_");
         let module_ident = syn::Ident::new(&module_name, Span::call_site());
         let mut f_tt = Vec::new();
         for (name, f) in &interface.functions {

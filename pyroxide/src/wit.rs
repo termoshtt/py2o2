@@ -24,7 +24,7 @@ pub fn witgen(target: &str) -> Result<(String, PathBuf)> {
 
     let out_dir = dirs::cache_dir().unwrap().join("pyroxide");
     fs::create_dir_all(&out_dir)?;
-    let path = Path::new(&out_dir).join(format!("{}.wit", target.replace("_", "-")));
+    let path = Path::new(&out_dir).join(format!("{}.wit", target.replace('_', "-")));
     fs::write(&path, &wit)?;
     Ok((wit, path))
 }
