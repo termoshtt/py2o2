@@ -28,8 +28,7 @@ fn wit2rust() -> Result<()> {
 
 #[test]
 fn py2wit() {
-    std::env::set_var("PYTHONPATH", PYTHON_ROOT);
-    let (wit, _path) = wit::witgen("type_aliases").unwrap();
+    let (wit, _path) = wit::witgen("type_aliases", Some(PYTHON_ROOT)).unwrap();
     insta::assert_snapshot!(wit, @r###"
     interface type-aliases {
     scale: func(scalar: float64, vector: list<float64>) -> list<float64>

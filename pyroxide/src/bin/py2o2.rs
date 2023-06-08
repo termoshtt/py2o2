@@ -10,21 +10,27 @@ struct Cli {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     let path = Path::new(&cli.python_module_name_or_path);
-    let module_name = if path.exists() {
-        std::env::set_var("PYTHONPATH", path.canonicalize().unwrap().parent().unwrap());
+    if path.is_file() {
+        let python_root = path.canonicalize().unwrap().parent().unwrap().to_owned();
         let name = path
             .file_name()
             .unwrap()
             .to_str()
             .context("Non UTF-8 filename")?;
-        if let Some(inner) = name.strip_suffix(".py") {
-            inner.to_string()
-        } else {
-            name.to_string()
-        }
+        println!(
+            "{}",
+            pyroxide::generate(
+                &name
+                    .strip_suffix(".py")
+                    .context("Input must be Python script")?,
+                Some(&python_root)
+            )?
+        );
     } else {
-        cli.python_module_name_or_path
-    };
-    println!("{}", pyroxide::generate(&module_name)?);
+        println!(
+            "{}",
+            pyroxide::generate(&cli.python_module_name_or_path, None::<&Path>)?
+        );
+    }
     Ok(())
 }

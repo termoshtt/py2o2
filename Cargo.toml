@@ -1,3 +1,2 @@
 [workspace]
 members = ["pyroxide", "pyroxide-testing"]
-default-members = ["pyroxide"]

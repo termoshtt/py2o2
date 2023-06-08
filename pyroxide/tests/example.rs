@@ -53,8 +53,7 @@ fn wit2rust() -> Result<()> {
 
 #[test]
 fn py2wit() {
-    std::env::set_var("PYTHONPATH", PYTHON_ROOT);
-    let (wit, _path) = wit::witgen("example").unwrap();
+    let (wit, _path) = wit::witgen("example", Some(PYTHON_ROOT)).unwrap();
     insta::assert_snapshot!(wit, @r###"
     interface example {
     a1: func() 
