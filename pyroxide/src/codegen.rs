@@ -20,9 +20,8 @@ fn as_input_type(
             use wit_parser::TypeDefKind;
             let def = &definitions[*id];
             match def.kind {
-                TypeDefKind::List(inner) => {
-                    let inner = as_input_type(&inner, definitions);
-                    syn::parse_quote!(&[#inner])
+                TypeDefKind::List(_) => {
+                    syn::parse_quote!(&::pyo3::types::PyList)
                 }
                 _ => unimplemented!("Type definition = {:?}", def),
             }
@@ -40,13 +39,13 @@ fn as_output_type(
         wit_parser::Type::U64 => syn::parse_quote!(u64),
         wit_parser::Type::Float64 => syn::parse_quote!(f64),
         wit_parser::Type::Float32 => syn::parse_quote!(f32),
-        wit_parser::Type::String => syn::parse_quote!(&'py PyString),
+        wit_parser::Type::String => syn::parse_quote!(&'py ::pyo3::types::PyString),
         wit_parser::Type::Id(id) => {
             use wit_parser::TypeDefKind;
             let def = &definitions[*id];
             match def.kind {
                 TypeDefKind::List(_) => {
-                    syn::parse_quote!(&'py PyList)
+                    syn::parse_quote!(&'py ::pyo3::types::PyList)
                 }
                 _ => unimplemented!("Type definition = {:?}", def),
             }
@@ -102,14 +101,13 @@ pub fn generate_from_wit(wit: wit_parser::Resolve) -> Result<String> {
             };
 
             f_tt.push(quote! {
-                pub fn #ident<'py>(py: Python<'py>, #input_tt) -> PyResult<#output> {
+                pub fn #ident<'py>(py: ::pyo3::Python<'py>, #input_tt) -> ::pyo3::PyResult<#output> {
                     #inner_tt
                 }
             });
         }
         tt.push(quote! {
             pub mod #module_ident {
-                use pyo3::{prelude::*, types::PyString};
                 #(#f_tt)*
             }
         })
