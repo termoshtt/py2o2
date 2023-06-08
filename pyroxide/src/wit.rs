@@ -6,15 +6,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub fn parse(path: &Path) -> Result<Vec<wit_parser::Interface>> {
-    let unresolved = wit_parser::UnresolvedPackage::parse_file(path)?;
+pub fn parse(path: &impl AsRef<Path>) -> Result<wit_parser::Resolve> {
+    let unresolved = wit_parser::UnresolvedPackage::parse_file(path.as_ref())?;
     let mut wit = wit_parser::Resolve::new();
     wit.push(unresolved, &HashMap::new())?;
-    Ok(wit
-        .interfaces
-        .into_iter()
-        .map(|(_id, contents)| contents)
-        .collect())
+    Ok(wit)
 }
 
 pub fn witgen(target: &str) -> Result<(String, PathBuf)> {

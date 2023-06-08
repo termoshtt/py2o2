@@ -6,38 +6,60 @@ fn format(tt: TokenStream2) -> String {
     prettyplease::unparse(&syn::parse_file(&tt.to_string()).unwrap())
 }
 
-fn as_input_type(ty: &wit_parser::Type) -> syn::Type {
+fn as_input_type(
+    ty: &wit_parser::Type,
+    definitions: &id_arena::Arena<wit_parser::TypeDef>,
+) -> syn::Type {
     match ty {
         wit_parser::Type::S64 => syn::parse_quote!(i64),
         wit_parser::Type::U64 => syn::parse_quote!(u64),
         wit_parser::Type::Float64 => syn::parse_quote!(f64),
         wit_parser::Type::Float32 => syn::parse_quote!(f32),
         wit_parser::Type::String => syn::parse_quote!(&str),
-        _ => unimplemented!(),
+        wit_parser::Type::Id(id) => {
+            use wit_parser::TypeDefKind;
+            let def = &definitions[*id];
+            match def.kind {
+                TypeDefKind::List(inner) => {
+                    let inner = as_input_type(&inner, definitions);
+                    syn::parse_quote!(&[#inner])
+                }
+                _ => unimplemented!("Type definition = {:?}", def),
+            }
+        }
+        _ => unimplemented!("ty = {:?}", ty),
     }
 }
 
-fn as_output_type(ty: &wit_parser::Type) -> syn::Type {
+fn as_output_type(
+    ty: &wit_parser::Type,
+    definitions: &id_arena::Arena<wit_parser::TypeDef>,
+) -> syn::Type {
     match ty {
         wit_parser::Type::S64 => syn::parse_quote!(i64),
         wit_parser::Type::U64 => syn::parse_quote!(u64),
         wit_parser::Type::Float64 => syn::parse_quote!(f64),
         wit_parser::Type::Float32 => syn::parse_quote!(f32),
         wit_parser::Type::String => syn::parse_quote!(&'py PyString),
-        _ => unimplemented!(),
+        wit_parser::Type::Id(id) => {
+            use wit_parser::TypeDefKind;
+            let def = &definitions[*id];
+            match def.kind {
+                TypeDefKind::List(_) => {
+                    syn::parse_quote!(&'py PyList)
+                }
+                _ => unimplemented!("Type definition = {:?}", def),
+            }
+        }
+        _ => unimplemented!("ty = {:?}", ty),
     }
 }
 
-fn as_rust_tuple(params: &[(String, wit_parser::Type)]) -> syn::Type {
-    let params: Vec<syn::Type> = params.iter().map(|(_, ty)| as_output_type(ty)).collect();
-    syn::parse_quote!((#(#params),*))
-}
-
-pub fn generate_from_wit(interfaces: &[wit_parser::Interface]) -> Result<String> {
+pub fn generate_from_wit(wit: wit_parser::Resolve) -> Result<String> {
     let mut tt = Vec::new();
-    for interface in interfaces {
+    for (_id, interface) in &wit.interfaces {
         let module_name = interface.name.as_ref().unwrap();
-        let module_ident = syn::Ident::new(module_name, Span::call_site());
+        let module_ident = syn::Ident::new(&module_name.replace("-", "_"), Span::call_site());
         let mut f_tt = Vec::new();
         for (name, f) in &interface.functions {
             let ident = syn::Ident::new(name, Span::call_site());
@@ -46,13 +68,22 @@ pub fn generate_from_wit(interfaces: &[wit_parser::Interface]) -> Result<String>
                 .iter()
                 .map(|(name, _)| syn::Ident::new(name, Span::call_site()))
                 .collect();
-            let param_types: Vec<syn::Type> =
-                f.params.iter().map(|(_, ty)| as_input_type(ty)).collect();
+            let param_types: Vec<syn::Type> = f
+                .params
+                .iter()
+                .map(|(_, ty)| as_input_type(ty, &wit.types))
+                .collect();
             let input_tt = quote!(#(#param_names: #param_types),*);
 
             let output = match &f.results {
-                wit_parser::Results::Named(params) => as_rust_tuple(params),
-                wit_parser::Results::Anon(ty) => as_output_type(ty),
+                wit_parser::Results::Named(params) => {
+                    let params: Vec<syn::Type> = params
+                        .iter()
+                        .map(|(_, ty)| as_output_type(ty, &wit.types))
+                        .collect();
+                    syn::parse_quote!((#(#params),*))
+                }
+                wit_parser::Results::Anon(ty) => as_output_type(ty, &wit.types),
             };
 
             let call_tt = quote! {
