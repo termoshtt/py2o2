@@ -25,6 +25,16 @@ jobs:
         command: run
         args: --bin py2o2 python/example.py
 
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/cargo@v1
+      with:
+        command: xtask
+    - name: Check changes
+      run: git diff --check
+
   check-format:
     runs-on: ubuntu-22.04
     steps:

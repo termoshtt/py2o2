@@ -5,6 +5,10 @@ use std::path::Path;
 #[derive(Parser, Debug)]
 struct Cli {
     python_module_name_or_path: String,
+
+    /// Generate Rust code without creating modules
+    #[arg(short, long, default_value_t = false)]
+    bare: bool,
 }
 
 fn main() -> Result<()> {
@@ -25,6 +29,6 @@ fn main() -> Result<()> {
     } else {
         cli.python_module_name_or_path
     };
-    println!("{}", pyroxide::generate(&module_name)?);
+    println!("{}", pyroxide::generate(&module_name, cli.bare)?);
     Ok(())
 }

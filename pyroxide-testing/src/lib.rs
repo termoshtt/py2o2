@@ -3,8 +3,8 @@
 use anyhow::Result;
 use pyo3::{prelude::*, types::*};
 
-include!(concat!(env!("OUT_DIR"), "/example.rs"));
-include!(concat!(env!("OUT_DIR"), "/type_aliases.rs"));
+pub mod example;
+pub mod type_aliases;
 
 const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
 
