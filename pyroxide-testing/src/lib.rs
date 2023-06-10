@@ -10,7 +10,6 @@ const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
 
 #[test]
 fn example() -> Result<()> {
-    use crate::example::*;
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
 
     Python::with_gil(|py| {
@@ -30,7 +29,6 @@ fn example() -> Result<()> {
 
 #[test]
 fn type_aliases() -> Result<()> {
-    use crate::type_aliases::*;
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
 
     Python::with_gil(|py| {
