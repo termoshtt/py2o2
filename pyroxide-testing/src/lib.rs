@@ -3,13 +3,14 @@
 use anyhow::Result;
 use pyo3::{prelude::*, types::*};
 
-include!(concat!(env!("OUT_DIR"), "/example.rs"));
-include!(concat!(env!("OUT_DIR"), "/type_aliases.rs"));
+pub mod example;
+pub mod type_aliases;
 
 const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
 
 #[test]
 fn example() -> Result<()> {
+    use crate::example::*;
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
 
     Python::with_gil(|py| {
@@ -29,6 +30,7 @@ fn example() -> Result<()> {
 
 #[test]
 fn type_aliases() -> Result<()> {
+    use crate::type_aliases::*;
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
 
     Python::with_gil(|py| {
