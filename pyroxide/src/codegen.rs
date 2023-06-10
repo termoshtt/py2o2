@@ -106,7 +106,7 @@ pub fn generate_function(
     })
 }
 
-pub fn generate_from_wit(wit: wit_parser::Resolve, bare: bool) -> Result<String> {
+pub fn generate_from_wit(wit: &wit_parser::Resolve, bare: bool) -> Result<String> {
     let mut tt = Vec::new();
     for (_id, interface) in &wit.interfaces {
         let module_name = interface.name.as_ref().unwrap().replace('-', "_");

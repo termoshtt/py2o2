@@ -7,8 +7,7 @@ const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
 #[test]
 fn wit2rust() -> Result<()> {
     let wit = wit::parse(&Path::new(PYTHON_ROOT).join("type-aliases.wit"))?;
-    let tt = codegen::generate_from_wit(wit, false).unwrap();
-    insta::assert_snapshot!(tt, @r###"
+    insta::assert_snapshot!(codegen::generate_from_wit(&wit, false)?, @r###"
     pub mod type_aliases {
         pub fn scale<'py>(
             py: ::pyo3::Python<'py>,
@@ -23,6 +22,21 @@ fn wit2rust() -> Result<()> {
         }
     }
     "###);
+
+    insta::assert_snapshot!(codegen::generate_from_wit(&wit, true)?, @r###"
+    pub fn scale<'py>(
+        py: ::pyo3::Python<'py>,
+        scalar: f64,
+        vector: &::pyo3::types::PyList,
+    ) -> ::pyo3::PyResult<&'py ::pyo3::types::PyList> {
+        let result = py
+            .import("type_aliases")?
+            .getattr("scale")?
+            .call((scalar, vector), None)?;
+        Ok(result.extract()?)
+    }
+    "###);
+
     Ok(())
 }
 
