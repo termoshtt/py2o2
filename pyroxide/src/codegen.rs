@@ -69,7 +69,7 @@ pub fn generate_function(
     let param_types: Vec<syn::Type> = f
         .params
         .iter()
-        .map(|(_, ty)| as_input_type(ty, &definitions))
+        .map(|(_, ty)| as_input_type(ty, definitions))
         .collect();
     let input_tt = quote!(#(#param_names: #param_types),*);
 
@@ -77,11 +77,11 @@ pub fn generate_function(
         wit_parser::Results::Named(params) => {
             let params: Vec<syn::Type> = params
                 .iter()
-                .map(|(_, ty)| as_output_type(ty, &definitions))
+                .map(|(_, ty)| as_output_type(ty, definitions))
                 .collect();
             syn::parse_quote!((#(#params),*))
         }
-        wit_parser::Results::Anon(ty) => as_output_type(ty, &definitions),
+        wit_parser::Results::Anon(ty) => as_output_type(ty, definitions),
     };
 
     let call_tt = quote! {
