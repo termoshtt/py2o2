@@ -7,7 +7,7 @@ const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
 #[test]
 fn wit2rust() -> Result<()> {
     let wit = wit::parse(&Path::new(PYTHON_ROOT).join("type-aliases.wit"))?;
-    let tt = codegen::generate_from_wit(wit).unwrap();
+    let tt = codegen::generate_from_wit(wit, false).unwrap();
     insta::assert_snapshot!(tt, @r###"
     pub mod type_aliases {
         pub fn scale<'py>(

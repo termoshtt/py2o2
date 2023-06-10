@@ -7,7 +7,7 @@ const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
 #[test]
 fn wit2rust() -> Result<()> {
     let wit = wit::parse(&Path::new(PYTHON_ROOT).join("example.wit"))?;
-    let tt = codegen::generate_from_wit(wit)?;
+    let tt = codegen::generate_from_wit(wit, false)?;
     insta::assert_snapshot!(tt, @r###"
     pub mod example {
         pub fn a1<'py>(py: ::pyo3::Python<'py>) -> ::pyo3::PyResult<()> {

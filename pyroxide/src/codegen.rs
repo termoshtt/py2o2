@@ -106,20 +106,27 @@ pub fn generate_function(
     })
 }
 
-pub fn generate_from_wit(wit: wit_parser::Resolve) -> Result<String> {
+pub fn generate_from_wit(wit: wit_parser::Resolve, bare: bool) -> Result<String> {
     let mut tt = Vec::new();
     for (_id, interface) in &wit.interfaces {
         let module_name = interface.name.as_ref().unwrap().replace('-', "_");
-        let module_ident = syn::Ident::new(&module_name, Span::call_site());
-        let mut f_tt = Vec::new();
-        for (name, f) in &interface.functions {
-            f_tt.push(generate_function(&module_name, name, f, &wit.types)?);
-        }
-        tt.push(quote! {
-            pub mod #module_ident {
+        let f_tt = interface
+            .functions
+            .iter()
+            .map(|(name, f)| generate_function(&module_name, name, f, &wit.types))
+            .collect::<Result<Vec<_>>>()?;
+        if !bare {
+            let module_ident = syn::Ident::new(&module_name, Span::call_site());
+            tt.push(quote! {
+                pub mod #module_ident {
+                    #(#f_tt)*
+                }
+            })
+        } else {
+            tt.push(quote! {
                 #(#f_tt)*
-            }
-        })
+            })
+        }
     }
     Ok(format(quote! { #(#tt)* }))
 }
