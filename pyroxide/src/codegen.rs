@@ -19,9 +19,16 @@ fn as_input_type(
         wit_parser::Type::Id(id) => {
             use wit_parser::TypeDefKind;
             let def = &definitions[*id];
-            match def.kind {
+            match &def.kind {
                 TypeDefKind::List(_) => {
                     syn::parse_quote!(&::pyo3::types::PyList)
+                }
+                TypeDefKind::Tuple(wit_parser::Tuple { types }) => {
+                    let types: Vec<_> = types
+                        .iter()
+                        .map(|ty| as_input_type(ty, definitions))
+                        .collect();
+                    syn::parse_quote! {(#(#types),*)}
                 }
                 _ => unimplemented!("Type definition = {:?}", def),
             }
@@ -43,9 +50,16 @@ fn as_output_type(
         wit_parser::Type::Id(id) => {
             use wit_parser::TypeDefKind;
             let def = &definitions[*id];
-            match def.kind {
+            match &def.kind {
                 TypeDefKind::List(_) => {
                     syn::parse_quote!(&'py ::pyo3::types::PyList)
+                }
+                TypeDefKind::Tuple(wit_parser::Tuple { types }) => {
+                    let types: Vec<_> = types
+                        .iter()
+                        .map(|ty| as_output_type(ty, definitions))
+                        .collect();
+                    syn::parse_quote! {(#(#types),*)}
                 }
                 _ => unimplemented!("Type definition = {:?}", def),
             }

@@ -7,55 +7,32 @@ import pathlib
 import types
 
 
-def tuple_as_named(ty: tuple) -> str:
+def tuple_as_tag(ty: tuple) -> str:
     """
     >>> ty = (int, str)
-    >>> tuple_as_named(ty)
-    '(out0: s64, out1: string)'
-    >>> ty = (int, (int, str))
-    >>> tuple_as_named(ty)
-    '(out0: s64, out1: tuple<s64, string>)'
-    """
-    tags = ["out%s: %s" % (i, type_as_tag_inner(t)) for i, t in enumerate(ty)]
-    return "(" + ", ".join(tags) + ")"
-
-
-def tuple_as_list(ty: tuple) -> str:
-    """
-    >>> ty = (int, str)
-    >>> tuple_as_list(ty)
+    >>> tuple_as_tag(ty)
     'tuple<s64, string>'
     >>> ty = (int, (int, str))
-    >>> tuple_as_list(ty)
+    >>> tuple_as_tag(ty)
     'tuple<s64, tuple<s64, string>>'
     """
-    tags = [type_as_tag_inner(t) for t in ty]
+    tags = [type_as_tag(t) for t in ty]
     return "tuple<" + ", ".join(tags) + ">"
 
 
 def generic_alias(ty: types.GenericAlias) -> str:
     if ty == types.GenericAlias(list, ty.__args__):
         for ty_ in ty.__args__:
-            name = type_as_tag_inner(ty_)
+            name = type_as_tag(ty_)
         return f"list<{name}>"
     raise NotImplementedError("Type = %s" % type(ty))
 
 
-def type_as_tag_outer(ty) -> str:
+def type_as_tag(ty) -> str:
     if type(ty) == type:
         return type_as_tag_primitive(ty)
     if type(ty) == tuple:
-        return tuple_as_named(ty)
-    if type(ty) == types.GenericAlias:
-        return generic_alias(ty)
-    raise NotImplementedError("Type = %s" % type(ty))
-
-
-def type_as_tag_inner(ty) -> str:
-    if type(ty) == type:
-        return type_as_tag_primitive(ty)
-    if type(ty) == tuple:
-        return tuple_as_list(ty)
+        return tuple_as_tag(ty)
     if type(ty) == types.GenericAlias:
         return generic_alias(ty)
     raise NotImplementedError("Type = %s" % type(ty))
@@ -88,14 +65,14 @@ def witgen(target: str) -> str:
     for name in functions:
         f = getattr(module, name).__annotations__
         if "return" in f:
-            o = "-> " + type_as_tag_outer(f["return"])
+            o = "-> " + type_as_tag(f["return"])
         else:
             o = ""
         i = ""
         for key, ty in f.items():
             if key == "return":
                 continue
-            ty = type_as_tag_inner(ty)
+            ty = type_as_tag(ty)
             if i:
                 i += ", "
             i += f"{key}: {ty}"
