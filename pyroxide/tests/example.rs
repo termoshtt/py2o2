@@ -101,8 +101,8 @@ fn py2wit() {
     a3: func(y: string, z: float64) 
     a4: func() -> s64
     a5: func(x: s64) -> string
-    a6: func() -> (out0: s64, out1: string)
-    a7: func(x: s64) -> (out0: s64, out1: string, out2: float64)
+    a6: func() -> tuple<s64, string>
+    a7: func(x: s64) -> tuple<s64, string, float64>
     }
     "###);
 }
