@@ -1,12 +1,30 @@
 use anyhow::Result;
 use pyroxide::{codegen, wit};
-use std::path::Path;
 
 const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
 
 #[test]
-fn wit2rust() -> Result<()> {
-    let wit = wit::parse(&Path::new(PYTHON_ROOT).join("example.wit"))?;
+fn py2wit() {
+    std::env::set_var("PYTHONPATH", PYTHON_ROOT);
+    let (wit, _path) = wit::witgen("example").unwrap();
+    insta::assert_snapshot!(wit, @r###"
+    interface example {
+    a1: func() 
+    a2: func(x: s64) 
+    a3: func(y: string, z: float64) 
+    a4: func() -> s64
+    a5: func(x: s64) -> string
+    a6: func() -> tuple<s64, string>
+    a7: func(x: s64) -> tuple<s64, string, float64>
+    }
+    "###);
+}
+
+#[test]
+fn py2rust() -> Result<()> {
+    std::env::set_var("PYTHONPATH", PYTHON_ROOT);
+    let (_, path) = wit::witgen("example").unwrap();
+    let wit = wit::parse(&path)?;
     insta::assert_snapshot!(codegen::generate_from_wit(&wit, false)?, @r###"
     pub mod example {
         pub fn a1<'py>(py: ::pyo3::Python<'py>) -> ::pyo3::PyResult<()> {
@@ -88,21 +106,4 @@ fn wit2rust() -> Result<()> {
     "###);
 
     Ok(())
-}
-
-#[test]
-fn py2wit() {
-    std::env::set_var("PYTHONPATH", PYTHON_ROOT);
-    let (wit, _path) = wit::witgen("example").unwrap();
-    insta::assert_snapshot!(wit, @r###"
-    interface example {
-    a1: func() 
-    a2: func(x: s64) 
-    a3: func(y: string, z: float64) 
-    a4: func() -> s64
-    a5: func(x: s64) -> string
-    a6: func() -> tuple<s64, string>
-    a7: func(x: s64) -> tuple<s64, string, float64>
-    }
-    "###);
 }
