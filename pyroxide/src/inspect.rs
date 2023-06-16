@@ -1,36 +1,41 @@
 use anyhow::Result;
 use pyo3::{types::PyModule, PyResult, Python};
+use serde::Deserialize;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[serde(tag = "kind")]
 pub enum Type {
     Primitive(Primitive),
-    Tuple(Vec<Type>),
-    List(Vec<Type>),
+    Tuple { tags: Vec<Type> },
+    List { inner: Vec<Type> },
     None,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[serde(tag = "name")]
 pub enum Primitive {
     Int,
     Float,
     Str,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
 pub struct Parameter {
     name: String,
     type_: Type,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
 struct Function {
     name: String,
     parameters: Vec<Parameter>,
     return_: Vec<Parameter>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Interface {
     functions: HashMap<String, Function>,
 }
@@ -51,6 +56,26 @@ mod test {
     use super::*;
 
     const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
+
+    #[test]
+    fn deserialize_type() -> Result<()> {
+        let ty: Type = serde_json::from_str(r#"{"kind": "none"}"#)?;
+        assert_eq!(ty, Type::None);
+
+        let ty: Type = serde_json::from_str(r#"{"kind": "primitive", "name": "int"}"#)?;
+        assert_eq!(ty, Type::Primitive(Primitive::Int));
+
+        let ty: Type = serde_json::from_str(
+            r#"{"kind": "list", "inner": [{"kind": "primitive", "name": "int"}]}"#,
+        )?;
+        assert_eq!(
+            ty,
+            Type::List {
+                inner: vec![Type::Primitive(Primitive::Int)]
+            }
+        );
+        Ok(())
+    }
 
     #[test]
     fn example() -> Result<()> {
