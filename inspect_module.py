@@ -6,12 +6,17 @@ import json
 
 
 def type_as_tag(ty: type) -> dict:
+    if ty == inspect._empty:
+        return {"kind": None}
     if ty == int:
-        return {"name": "int"}
+        return {"kind": "primitive", "name": "int"}
     if ty == str:
-        return {"name": "str"}
+        return {"kind": "primitive", "name": "str"}
     if ty == float:
-        return {"name": "float"}
+        return {"kind": "primitive", "name": "float"}
+    if type(ty) == tuple:
+        tags = [type_as_tag(t) for t in ty]
+        return {"kind": "tuple", "tags": tags}
     raise NotImplementedError(f"Unsupported type = {ty}")
 
 
@@ -21,14 +26,16 @@ def inspect_module(target: str) -> str:
     for name, attr in inspect.getmembers(module):
         if not inspect.isfunction(attr):
             continue
-        f = {"name": name, "parameters": []}
         sig = inspect.signature(getattr(module, name))
-        for name, p in sig.parameters.items():
-            f["parameters"].append(
+        interface["functions"][name] = {
+            "name": name,
+            "parameters": [
                 {"name": name, "annotation": type_as_tag(p.annotation)}
-            )
-        interface["functions"][name] = f
-    return json.dumps(interface)
+                for name, p in sig.parameters.items()
+            ],
+            "return": type_as_tag(sig.return_annotation),
+        }
+    return json.dumps(interface, indent=4)
 
 
 def main() -> int:
