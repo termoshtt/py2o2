@@ -3,6 +3,7 @@ import importlib
 import pathlib
 import sys
 import json
+import types
 
 
 def type_as_tag(ty: type) -> dict:
@@ -17,6 +18,9 @@ def type_as_tag(ty: type) -> dict:
     if type(ty) == tuple:
         tags = [type_as_tag(t) for t in ty]
         return {"kind": "tuple", "tags": tags}
+    if type(ty) == types.GenericAlias:
+        if ty.__origin__ == list:
+            return {"kind": "list", "inner": [type_as_tag(t) for t in ty.__args__]}
     raise NotImplementedError(f"Unsupported type = {ty}")
 
 
