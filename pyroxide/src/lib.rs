@@ -1,4 +1,5 @@
 pub mod codegen;
+pub mod inspect;
 pub mod wit;
 
 use anyhow::Result;
