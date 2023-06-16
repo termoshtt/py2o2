@@ -34,7 +34,7 @@ def inspect_module(target: str) -> str:
         interface["functions"][name] = {
             "name": name,
             "parameters": [
-                {"name": name, "annotation": type_as_tag(p.annotation)}
+                {"name": name, "type": type_as_tag(p.annotation)}
                 for name, p in sig.parameters.items()
             ],
             "return": type_as_tag(sig.return_annotation),
