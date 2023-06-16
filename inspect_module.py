@@ -8,7 +8,7 @@ import types
 
 def type_as_tag(ty: type) -> dict:
     if ty == inspect._empty:
-        return {"kind": None}
+        return {"kind": "none"}
     if ty == int:
         return {"kind": "primitive", "name": "int"}
     if ty == str:

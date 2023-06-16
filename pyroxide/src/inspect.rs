@@ -102,7 +102,7 @@ mod test {
                     "name": "a1",
                     "parameters": [],
                     "return": {
-                        "kind": null
+                        "kind": "none"
                     }
                 },
                 "a2": {
@@ -117,7 +117,7 @@ mod test {
                         }
                     ],
                     "return": {
-                        "kind": null
+                        "kind": "none"
                     }
                 },
                 "a3": {
@@ -139,7 +139,7 @@ mod test {
                         }
                     ],
                     "return": {
-                        "kind": null
+                        "kind": "none"
                     }
                 },
                 "a4": {
