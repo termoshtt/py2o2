@@ -25,7 +25,7 @@ pub enum Primitive {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
 pub struct Parameter {
     name: String,
-    type_: Type,
+    r#type: Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
@@ -72,6 +72,20 @@ mod test {
             ty,
             Type::List {
                 inner: vec![Type::Primitive(Primitive::Int)]
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn deserialize_parameter() -> Result<()> {
+        let p: Parameter =
+            serde_json::from_str(r#"{"name": "x", "type": {"kind": "primitive", "name": "int"}}"#)?;
+        assert_eq!(
+            p,
+            Parameter {
+                name: "x".to_string(),
+                r#type: Type::Primitive(Primitive::Int)
             }
         );
         Ok(())
