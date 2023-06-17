@@ -14,7 +14,7 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
         Type::Primitive(Primitive::Str) => syn::parse_quote!(&str),
         Type::None => syn::parse_quote!(()),
         Type::Tuple { tags } => {
-            let tags: Vec<syn::Type> = tags.iter().map(|ty| as_input_type(ty)).collect();
+            let tags: Vec<syn::Type> = tags.iter().map(as_input_type).collect();
             syn::parse_quote! { (#(#tags),*) }
         }
         Type::List { .. } => syn::parse_quote! { &::pyo3::types::PyList },
@@ -28,7 +28,7 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
         Type::Primitive(Primitive::Str) => syn::parse_quote!(&'py ::pyo3::types::PyString),
         Type::None => syn::parse_quote!(()),
         Type::Tuple { tags } => {
-            let tags: Vec<syn::Type> = tags.iter().map(|ty| as_output_type(ty)).collect();
+            let tags: Vec<syn::Type> = tags.iter().map(as_output_type).collect();
             syn::parse_quote! { (#(#tags),*) }
         }
         Type::List { .. } => {
@@ -79,12 +79,10 @@ pub fn generate_function(module_name: &str, f: &Function) -> Result<TokenStream2
 pub fn generate(module_name: &str, interface: &Interface, bare: bool) -> Result<String> {
     let mut tt = Vec::new();
     let f_tt = interface
-        .functions
-        .iter()
-        .map(|(_, f)| generate_function(&module_name, f))
+        .functions.values().map(|f| generate_function(module_name, f))
         .collect::<Result<Vec<_>>>()?;
     if !bare {
-        let module_ident = syn::Ident::new(&module_name, Span::call_site());
+        let module_ident = syn::Ident::new(module_name, Span::call_site());
         tt.push(quote! {
             pub mod #module_ident {
                 #(#f_tt)*
