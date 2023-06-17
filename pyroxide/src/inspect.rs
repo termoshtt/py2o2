@@ -1,7 +1,7 @@
 use anyhow::Result;
 use pyo3::{types::PyModule, PyResult, Python};
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -37,7 +37,7 @@ struct Function {
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Interface {
-    functions: HashMap<String, Function>,
+    functions: BTreeMap<String, Function>,
 }
 
 impl Interface {
@@ -236,12 +236,17 @@ mod test {
                     parameters: [],
                     return: None,
                 },
-                "a4": Function {
-                    name: "a4",
-                    parameters: [],
-                    return: Primitive(
-                        Int,
-                    ),
+                "a2": Function {
+                    name: "a2",
+                    parameters: [
+                        Parameter {
+                            name: "x",
+                            type: Primitive(
+                                Int,
+                            ),
+                        },
+                    ],
+                    return: None,
                 },
                 "a3": Function {
                     name: "a3",
@@ -260,6 +265,13 @@ mod test {
                         },
                     ],
                     return: None,
+                },
+                "a4": Function {
+                    name: "a4",
+                    parameters: [],
+                    return: Primitive(
+                        Int,
+                    ),
                 },
                 "a5": Function {
                     name: "a5",
@@ -288,18 +300,6 @@ mod test {
                             ),
                         ],
                     },
-                },
-                "a2": Function {
-                    name: "a2",
-                    parameters: [
-                        Parameter {
-                            name: "x",
-                            type: Primitive(
-                                Int,
-                            ),
-                        },
-                    ],
-                    return: None,
                 },
                 "a7": Function {
                     name: "a7",
