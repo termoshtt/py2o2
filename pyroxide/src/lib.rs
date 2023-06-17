@@ -1,4 +1,3 @@
-pub mod codegen;
 pub mod codegen2;
 pub mod inspect;
 pub mod wit;
@@ -6,8 +5,7 @@ pub mod wit;
 use anyhow::Result;
 
 pub fn generate(python_module_name: &str, bare: bool) -> Result<String> {
-    let (_wit, path) = wit::witgen(python_module_name)?;
-    let wit = wit::parse(&path)?;
-    let generated = codegen::generate_from_wit(&wit, bare)?;
+    let interface = inspect::Interface::from_py_module(python_module_name)?;
+    let generated = codegen2::generate(python_module_name, &interface, bare)?;
     Ok(generated)
 }
