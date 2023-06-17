@@ -1,4 +1,5 @@
 pub mod codegen;
+pub mod codegen2;
 pub mod inspect;
 pub mod wit;
 

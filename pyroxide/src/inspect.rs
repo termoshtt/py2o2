@@ -24,20 +24,20 @@ pub enum Primitive {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
 pub struct Parameter {
-    name: String,
-    r#type: Type,
+    pub name: String,
+    pub r#type: Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
-struct Function {
-    name: String,
-    parameters: Vec<Parameter>,
-    r#return: Type,
+pub struct Function {
+    pub name: String,
+    pub parameters: Vec<Parameter>,
+    pub r#return: Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Interface {
-    functions: BTreeMap<String, Function>,
+    pub functions: BTreeMap<String, Function>,
 }
 
 impl Interface {
