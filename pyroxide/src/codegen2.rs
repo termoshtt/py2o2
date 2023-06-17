@@ -79,7 +79,9 @@ pub fn generate_function(module_name: &str, f: &Function) -> Result<TokenStream2
 pub fn generate(module_name: &str, interface: &Interface, bare: bool) -> Result<String> {
     let mut tt = Vec::new();
     let f_tt = interface
-        .functions.values().map(|f| generate_function(module_name, f))
+        .functions
+        .values()
+        .map(|f| generate_function(module_name, f))
         .collect::<Result<Vec<_>>>()?;
     if !bare {
         let module_ident = syn::Ident::new(module_name, Span::call_site());
