@@ -32,7 +32,7 @@ pub struct Parameter {
 struct Function {
     name: String,
     parameters: Vec<Parameter>,
-    return_: Vec<Parameter>,
+    r#return: Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -40,7 +40,18 @@ pub struct Interface {
     functions: HashMap<String, Function>,
 }
 
-pub fn inspect(target: &str) -> Result<String> {
+impl Interface {
+    pub fn from_json(json: &str) -> Result<Self> {
+        Ok(serde_json::from_str(json)?)
+    }
+
+    pub fn from_py_module(target: &str) -> Result<Self> {
+        let json = get_inspect_json(target)?;
+        Self::from_json(&json)
+    }
+}
+
+pub fn get_inspect_json(target: &str) -> Result<String> {
     const PY: &str = include_str!("../../inspect_module.py");
     let json = Python::with_gil(|py: Python<'_>| -> PyResult<String> {
         let module = PyModule::from_code(py, PY, "", "")?;
@@ -94,7 +105,7 @@ mod test {
     #[test]
     fn example() -> Result<()> {
         std::env::set_var("PYTHONPATH", PYTHON_ROOT);
-        let json = inspect("example")?;
+        let json = get_inspect_json("example")?;
         insta::assert_snapshot!(json, @r###"
         {
             "functions": {
@@ -215,13 +226,116 @@ mod test {
             }
         }
         "###);
+
+        let interface = Interface::from_json(&json)?;
+        insta::assert_debug_snapshot!(interface, @r###"
+        Interface {
+            functions: {
+                "a1": Function {
+                    name: "a1",
+                    parameters: [],
+                    return: None,
+                },
+                "a4": Function {
+                    name: "a4",
+                    parameters: [],
+                    return: Primitive(
+                        Int,
+                    ),
+                },
+                "a3": Function {
+                    name: "a3",
+                    parameters: [
+                        Parameter {
+                            name: "y",
+                            type: Primitive(
+                                Str,
+                            ),
+                        },
+                        Parameter {
+                            name: "z",
+                            type: Primitive(
+                                Float,
+                            ),
+                        },
+                    ],
+                    return: None,
+                },
+                "a5": Function {
+                    name: "a5",
+                    parameters: [
+                        Parameter {
+                            name: "x",
+                            type: Primitive(
+                                Int,
+                            ),
+                        },
+                    ],
+                    return: Primitive(
+                        Str,
+                    ),
+                },
+                "a6": Function {
+                    name: "a6",
+                    parameters: [],
+                    return: Tuple {
+                        tags: [
+                            Primitive(
+                                Int,
+                            ),
+                            Primitive(
+                                Str,
+                            ),
+                        ],
+                    },
+                },
+                "a2": Function {
+                    name: "a2",
+                    parameters: [
+                        Parameter {
+                            name: "x",
+                            type: Primitive(
+                                Int,
+                            ),
+                        },
+                    ],
+                    return: None,
+                },
+                "a7": Function {
+                    name: "a7",
+                    parameters: [
+                        Parameter {
+                            name: "x",
+                            type: Primitive(
+                                Int,
+                            ),
+                        },
+                    ],
+                    return: Tuple {
+                        tags: [
+                            Primitive(
+                                Int,
+                            ),
+                            Primitive(
+                                Str,
+                            ),
+                            Primitive(
+                                Float,
+                            ),
+                        ],
+                    },
+                },
+            },
+        }
+        "###);
+
         Ok(())
     }
 
     #[test]
     fn type_aliases() -> Result<()> {
         std::env::set_var("PYTHONPATH", PYTHON_ROOT);
-        let json = inspect("type_aliases")?;
+        let json = get_inspect_json("type_aliases")?;
         insta::assert_snapshot!(json, @r###"
         {
             "functions": {
@@ -261,6 +375,43 @@ mod test {
             }
         }
         "###);
+
+        let interface = Interface::from_json(&json)?;
+        insta::assert_debug_snapshot!(interface, @r###"
+        Interface {
+            functions: {
+                "scale": Function {
+                    name: "scale",
+                    parameters: [
+                        Parameter {
+                            name: "scalar",
+                            type: Primitive(
+                                Float,
+                            ),
+                        },
+                        Parameter {
+                            name: "vector",
+                            type: List {
+                                inner: [
+                                    Primitive(
+                                        Float,
+                                    ),
+                                ],
+                            },
+                        },
+                    ],
+                    return: List {
+                        inner: [
+                            Primitive(
+                                Float,
+                            ),
+                        ],
+                    },
+                },
+            },
+        }
+        "###);
+
         Ok(())
     }
 }
