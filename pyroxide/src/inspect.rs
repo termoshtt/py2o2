@@ -10,6 +10,7 @@ pub enum Type {
     Primitive(Primitive),
     Tuple { tags: Vec<Type> },
     List { inner: Vec<Type> },
+    Dict { inner: Vec<Type> },
     None,
 }
 
@@ -339,6 +340,60 @@ mod test {
         insta::assert_snapshot!(json, @r###"
         {
             "functions": {
+                "broadcast_message": {
+                    "name": "broadcast_message",
+                    "parameters": [
+                        {
+                            "name": "message",
+                            "type": {
+                                "kind": "primitive",
+                                "name": "str"
+                            }
+                        },
+                        {
+                            "name": "servers",
+                            "type": {
+                                "kind": "list",
+                                "inner": [
+                                    {
+                                        "kind": "tuple",
+                                        "tags": [
+                                            {
+                                                "kind": "tuple",
+                                                "tags": [
+                                                    {
+                                                        "kind": "primitive",
+                                                        "name": "str"
+                                                    },
+                                                    {
+                                                        "kind": "primitive",
+                                                        "name": "int"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "kind": "dict",
+                                                "inner": [
+                                                    {
+                                                        "kind": "primitive",
+                                                        "name": "str"
+                                                    },
+                                                    {
+                                                        "kind": "primitive",
+                                                        "name": "str"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "return": {
+                        "kind": "none"
+                    }
+                },
                 "scale": {
                     "name": "scale",
                     "parameters": [
@@ -380,6 +435,49 @@ mod test {
         insta::assert_debug_snapshot!(interface, @r###"
         Interface {
             functions: {
+                "broadcast_message": Function {
+                    name: "broadcast_message",
+                    parameters: [
+                        Parameter {
+                            name: "message",
+                            type: Primitive(
+                                Str,
+                            ),
+                        },
+                        Parameter {
+                            name: "servers",
+                            type: List {
+                                inner: [
+                                    Tuple {
+                                        tags: [
+                                            Tuple {
+                                                tags: [
+                                                    Primitive(
+                                                        Str,
+                                                    ),
+                                                    Primitive(
+                                                        Int,
+                                                    ),
+                                                ],
+                                            },
+                                            Dict {
+                                                inner: [
+                                                    Primitive(
+                                                        Str,
+                                                    ),
+                                                    Primitive(
+                                                        Str,
+                                                    ),
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                    return: None,
+                },
                 "scale": Function {
                     name: "scale",
                     parameters: [

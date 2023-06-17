@@ -4,10 +4,11 @@ import pathlib
 import sys
 import json
 import types
+import collections.abc
 
 
 def type_as_tag(ty: type) -> dict:
-    if ty == inspect._empty:
+    if ty is None or ty == inspect._empty:
         return {"kind": "none"}
     if ty == int:
         return {"kind": "primitive", "name": "int"}
@@ -19,8 +20,14 @@ def type_as_tag(ty: type) -> dict:
         tags = [type_as_tag(t) for t in ty]
         return {"kind": "tuple", "tags": tags}
     if type(ty) == types.GenericAlias:
-        if ty.__origin__ == list:
+        if ty.__origin__ in [list, collections.abc.Sequence]:
             return {"kind": "list", "inner": [type_as_tag(t) for t in ty.__args__]}
+        if ty.__origin__ == tuple:
+            tags = [type_as_tag(t) for t in ty.__args__]
+            return {"kind": "tuple", "tags": tags}
+        if ty.__origin__ == dict:
+            tags = [type_as_tag(t) for t in ty.__args__]
+            return {"kind": "dict", "inner": tags}
     raise NotImplementedError(f"Unsupported type = {ty}")
 
 

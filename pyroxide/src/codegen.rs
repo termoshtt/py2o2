@@ -18,6 +18,7 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
             syn::parse_quote! { (#(#tags),*) }
         }
         Type::List { .. } => syn::parse_quote! { &::pyo3::types::PyList },
+        Type::Dict { .. } => syn::parse_quote! { &::pyo3::types::PyDict },
     }
 }
 
@@ -31,9 +32,8 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
             let tags: Vec<syn::Type> = tags.iter().map(as_output_type).collect();
             syn::parse_quote! { (#(#tags),*) }
         }
-        Type::List { .. } => {
-            syn::parse_quote! { &'py ::pyo3::types::PyList }
-        }
+        Type::List { .. } => syn::parse_quote! { &'py ::pyo3::types::PyList },
+        Type::Dict { .. } => syn::parse_quote! { &'py ::pyo3::types::PyDict },
     }
 }
 
@@ -194,6 +194,17 @@ mod test {
         std::env::set_var("PYTHONPATH", PYTHON_ROOT);
         let interface = Interface::from_py_module("type_aliases")?;
         insta::assert_snapshot!(generate("type_aliases", &interface, true)?, @r###"
+        pub fn broadcast_message<'py>(
+            py: ::pyo3::Python<'py>,
+            message: &str,
+            servers: &::pyo3::types::PyList,
+        ) -> ::pyo3::PyResult<()> {
+            let _ = py
+                .import("type_aliases")?
+                .getattr("broadcast_message")?
+                .call((message, servers), None)?;
+            Ok(())
+        }
         pub fn scale<'py>(
             py: ::pyo3::Python<'py>,
             scalar: f64,
@@ -209,6 +220,17 @@ mod test {
 
         insta::assert_snapshot!(generate("example", &interface, false)?, @r###"
         pub mod example {
+            pub fn broadcast_message<'py>(
+                py: ::pyo3::Python<'py>,
+                message: &str,
+                servers: &::pyo3::types::PyList,
+            ) -> ::pyo3::PyResult<()> {
+                let _ = py
+                    .import("example")?
+                    .getattr("broadcast_message")?
+                    .call((message, servers), None)?;
+                Ok(())
+            }
             pub fn scale<'py>(
                 py: ::pyo3::Python<'py>,
                 scalar: f64,
