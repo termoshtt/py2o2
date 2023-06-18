@@ -19,6 +19,9 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
         }
         Type::List { .. } => syn::parse_quote! { &::pyo3::types::PyList },
         Type::Dict { .. } => syn::parse_quote! { &::pyo3::types::PyDict },
+        Type::UserDefined { .. } => {
+            unimplemented!()
+        }
     }
 }
 
@@ -34,6 +37,9 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
         }
         Type::List { .. } => syn::parse_quote! { &'py ::pyo3::types::PyList },
         Type::Dict { .. } => syn::parse_quote! { &'py ::pyo3::types::PyDict },
+        Type::UserDefined { .. } => {
+            unimplemented!()
+        }
     }
 }
 

@@ -5,6 +5,7 @@ import sys
 import json
 import types
 import collections.abc
+import typing
 
 
 def type_as_tag(ty: type) -> dict:
@@ -28,7 +29,14 @@ def type_as_tag(ty: type) -> dict:
         if ty.__origin__ == dict:
             tags = [type_as_tag(t) for t in ty.__args__]
             return {"kind": "dict", "inner": tags}
-    raise NotImplementedError(f"Unsupported type = {ty}")
+    if type(ty) == typing.NewType:
+        return {
+            "kind": "user_defined",
+            "module": ty.__module__,
+            "name": ty.__name__,
+            "supertype": type_as_tag(ty.__supertype__),
+        }
+    raise NotImplementedError(f"Unsupported type = {ty}, {type(ty)}")
 
 
 def inspect_module(target: str) -> str:

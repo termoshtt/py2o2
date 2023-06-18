@@ -4,13 +4,24 @@ use serde::Deserialize;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 #[serde(tag = "kind")]
 pub enum Type {
     Primitive(Primitive),
-    Tuple { tags: Vec<Type> },
-    List { inner: Vec<Type> },
-    Dict { inner: Vec<Type> },
+    Tuple {
+        tags: Vec<Type>,
+    },
+    List {
+        inner: Vec<Type>,
+    },
+    Dict {
+        inner: Vec<Type>,
+    },
+    UserDefined {
+        module: String,
+        name: String,
+        supertype: Box<Type>,
+    },
     None,
 }
 
