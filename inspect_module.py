@@ -17,9 +17,6 @@ def type_as_tag(ty: type) -> dict:
         return {"kind": "primitive", "name": "str"}
     if ty == float:
         return {"kind": "primitive", "name": "float"}
-    if type(ty) == tuple:
-        tags = [type_as_tag(t) for t in ty]
-        return {"kind": "tuple", "tags": tags}
     if type(ty) == types.GenericAlias:
         if ty.__origin__ in [list, collections.abc.Sequence]:
             return {"kind": "list", "inner": [type_as_tag(t) for t in ty.__args__]}
