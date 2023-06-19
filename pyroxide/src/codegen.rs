@@ -20,7 +20,8 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
         Type::List { .. } => syn::parse_quote! { &::pyo3::types::PyList },
         Type::Dict { .. } => syn::parse_quote! { &::pyo3::types::PyDict },
         Type::UserDefined { .. } => {
-            unimplemented!()
+            // FIXME
+            syn::parse_quote!(())
         }
     }
 }
@@ -38,7 +39,8 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
         Type::List { .. } => syn::parse_quote! { &'py ::pyo3::types::PyList },
         Type::Dict { .. } => syn::parse_quote! { &'py ::pyo3::types::PyDict },
         Type::UserDefined { .. } => {
-            unimplemented!()
+            // FIXME
+            syn::parse_quote!(())
         }
     }
 }
@@ -211,6 +213,16 @@ mod test {
                 .call((message, servers), None)?;
             Ok(())
         }
+        pub fn get_user_name<'py>(
+            py: ::pyo3::Python<'py>,
+            user_id: (),
+        ) -> ::pyo3::PyResult<&'py ::pyo3::types::PyString> {
+            let result = py
+                .import("type_aliases")?
+                .getattr("get_user_name")?
+                .call((user_id,), None)?;
+            Ok(result.extract()?)
+        }
         pub fn scale<'py>(
             py: ::pyo3::Python<'py>,
             scalar: f64,
@@ -236,6 +248,16 @@ mod test {
                     .getattr("broadcast_message")?
                     .call((message, servers), None)?;
                 Ok(())
+            }
+            pub fn get_user_name<'py>(
+                py: ::pyo3::Python<'py>,
+                user_id: (),
+            ) -> ::pyo3::PyResult<&'py ::pyo3::types::PyString> {
+                let result = py
+                    .import("example")?
+                    .getattr("get_user_name")?
+                    .call((user_id,), None)?;
+                Ok(result.extract()?)
             }
             pub fn scale<'py>(
                 py: ::pyo3::Python<'py>,

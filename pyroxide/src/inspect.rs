@@ -235,7 +235,8 @@ mod test {
                         ]
                     }
                 }
-            }
+            },
+            "type_definitions": {}
         }
         "###);
 
@@ -405,6 +406,27 @@ mod test {
                         "kind": "none"
                     }
                 },
+                "get_user_name": {
+                    "name": "get_user_name",
+                    "parameters": [
+                        {
+                            "name": "user_id",
+                            "type": {
+                                "kind": "user_defined",
+                                "module": "type_aliases",
+                                "name": "UserId",
+                                "supertype": {
+                                    "kind": "primitive",
+                                    "name": "int"
+                                }
+                            }
+                        }
+                    ],
+                    "return": {
+                        "kind": "primitive",
+                        "name": "str"
+                    }
+                },
                 "scale": {
                     "name": "scale",
                     "parameters": [
@@ -436,6 +458,16 @@ mod test {
                                 "name": "float"
                             }
                         ]
+                    }
+                }
+            },
+            "type_definitions": {
+                "UserId": {
+                    "module": "type_aliases",
+                    "name": "UserId",
+                    "supertype": {
+                        "kind": "primitive",
+                        "name": "int"
                     }
                 }
             }
@@ -488,6 +520,24 @@ mod test {
                         },
                     ],
                     return: None,
+                },
+                "get_user_name": Function {
+                    name: "get_user_name",
+                    parameters: [
+                        Parameter {
+                            name: "user_id",
+                            type: UserDefined {
+                                module: "type_aliases",
+                                name: "UserId",
+                                supertype: Primitive(
+                                    Int,
+                                ),
+                            },
+                        },
+                    ],
+                    return: Primitive(
+                        Str,
+                    ),
                 },
                 "scale": Function {
                     name: "scale",
