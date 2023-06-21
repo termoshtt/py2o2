@@ -1,5 +1,10 @@
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UserId(pub i64);
+impl ::pyo3::conversion::IntoPy<::pyo3::PyObject> for UserId {
+    fn into_py(self, py: ::pyo3::Python<'_>) -> ::pyo3::PyObject {
+        self.0.into_py(py)
+    }
+}
 pub fn broadcast_message<'py>(
     py: ::pyo3::Python<'py>,
     message: &str,
@@ -13,7 +18,7 @@ pub fn broadcast_message<'py>(
 }
 pub fn get_user_name<'py>(
     py: ::pyo3::Python<'py>,
-    user_id: (),
+    user_id: UserId,
 ) -> ::pyo3::PyResult<&'py ::pyo3::types::PyString> {
     let result = py
         .import("type_aliases")?

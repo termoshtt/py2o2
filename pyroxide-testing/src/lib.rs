@@ -27,9 +27,6 @@ fn example() -> Result<()> {
     })
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct UserId(pub i64);
-
 #[test]
 fn type_aliases() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
@@ -38,12 +35,8 @@ fn type_aliases() -> Result<()> {
         let out = type_aliases::scale(py, 2.0, PyList::new(py, [1.0, 2.0, 3.0]))?;
         dbg!(out);
 
-        let id = UserId(124);
-        let out: &PyString = py
-            .import("type_aliases")?
-            .getattr("get_user_name")?
-            .call((id.0,), None)?
-            .extract()?;
+        let id = type_aliases::UserId(124);
+        let out = type_aliases::get_user_name(py, id)?;
         assert_eq!(out.to_str()?, "ID = 124");
 
         Ok(())

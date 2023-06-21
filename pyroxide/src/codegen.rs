@@ -19,9 +19,9 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
         }
         Type::List { .. } => syn::parse_quote! { &::pyo3::types::PyList },
         Type::Dict { .. } => syn::parse_quote! { &::pyo3::types::PyDict },
-        Type::UserDefined { .. } => {
-            // FIXME
-            syn::parse_quote!(())
+        Type::UserDefined { name, .. } => {
+            let ty = syn::Ident::new(name, Span::call_site());
+            syn::parse_quote!(#ty)
         }
     }
 }
@@ -38,9 +38,9 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
         }
         Type::List { .. } => syn::parse_quote! { &'py ::pyo3::types::PyList },
         Type::Dict { .. } => syn::parse_quote! { &'py ::pyo3::types::PyDict },
-        Type::UserDefined { .. } => {
-            // FIXME
-            syn::parse_quote!(())
+        Type::UserDefined { name, .. } => {
+            let ty = syn::Ident::new(name, Span::call_site());
+            syn::parse_quote!(#ty)
         }
     }
 }
@@ -93,6 +93,12 @@ pub fn generate_type_definitions(typedef: &TypeDefinition) -> Result<TokenStream
     Ok(quote! {
         #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct #name(pub #inner);
+
+        impl ::pyo3::conversion::IntoPy<::pyo3::PyObject> for #name {
+            fn into_py(self, py: ::pyo3::Python<'_>) -> ::pyo3::PyObject {
+                self.0.into_py(py)
+            }
+        }
     })
 }
 
@@ -223,6 +229,11 @@ mod test {
         insta::assert_snapshot!(generate("type_aliases", &interface, true)?, @r###"
         #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct UserId(pub i64);
+        impl ::pyo3::conversion::IntoPy<::pyo3::PyObject> for UserId {
+            fn into_py(self, py: ::pyo3::Python<'_>) -> ::pyo3::PyObject {
+                self.0.into_py(py)
+            }
+        }
         pub fn broadcast_message<'py>(
             py: ::pyo3::Python<'py>,
             message: &str,
@@ -236,7 +247,7 @@ mod test {
         }
         pub fn get_user_name<'py>(
             py: ::pyo3::Python<'py>,
-            user_id: (),
+            user_id: UserId,
         ) -> ::pyo3::PyResult<&'py ::pyo3::types::PyString> {
             let result = py
                 .import("type_aliases")?
@@ -261,6 +272,11 @@ mod test {
         pub mod example {
             #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
             pub struct UserId(pub i64);
+            impl ::pyo3::conversion::IntoPy<::pyo3::PyObject> for UserId {
+                fn into_py(self, py: ::pyo3::Python<'_>) -> ::pyo3::PyObject {
+                    self.0.into_py(py)
+                }
+            }
             pub fn broadcast_message<'py>(
                 py: ::pyo3::Python<'py>,
                 message: &str,
@@ -274,7 +290,7 @@ mod test {
             }
             pub fn get_user_name<'py>(
                 py: ::pyo3::Python<'py>,
-                user_id: (),
+                user_id: UserId,
             ) -> ::pyo3::PyResult<&'py ::pyo3::types::PyString> {
                 let result = py
                     .import("example")?
