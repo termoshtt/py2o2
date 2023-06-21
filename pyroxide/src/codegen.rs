@@ -84,6 +84,18 @@ pub fn generate_function(module_name: &str, f: &Function) -> Result<TokenStream2
     })
 }
 
+pub fn generate_type_definitions(typedef: &TypeDefinition) -> Result<TokenStream2> {
+    let TypeDefinition {
+        name, supertype, ..
+    } = typedef;
+    let inner = as_output_type(supertype);
+    let name = syn::Ident::new(name, Span::call_site());
+    Ok(quote! {
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        pub struct #name(pub #inner);
+    })
+}
+
 pub fn generate(module_name: &str, interface: &Interface, bare: bool) -> Result<String> {
     let mut tt = Vec::new();
     let f_tt = interface
@@ -91,15 +103,22 @@ pub fn generate(module_name: &str, interface: &Interface, bare: bool) -> Result<
         .values()
         .map(|f| generate_function(module_name, f))
         .collect::<Result<Vec<_>>>()?;
+    let typedef_tt = interface
+        .type_definitions
+        .values()
+        .map(|typedef| generate_type_definitions(typedef))
+        .collect::<Result<Vec<_>>>()?;
     if !bare {
         let module_ident = syn::Ident::new(module_name, Span::call_site());
         tt.push(quote! {
             pub mod #module_ident {
+                #(#typedef_tt)*
                 #(#f_tt)*
             }
         })
     } else {
         tt.push(quote! {
+            #(#typedef_tt)*
             #(#f_tt)*
         })
     }
@@ -202,6 +221,8 @@ mod test {
         std::env::set_var("PYTHONPATH", PYTHON_ROOT);
         let interface = Interface::from_py_module("type_aliases")?;
         insta::assert_snapshot!(generate("type_aliases", &interface, true)?, @r###"
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        pub struct UserId(pub i64);
         pub fn broadcast_message<'py>(
             py: ::pyo3::Python<'py>,
             message: &str,
@@ -238,6 +259,8 @@ mod test {
 
         insta::assert_snapshot!(generate("example", &interface, false)?, @r###"
         pub mod example {
+            #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+            pub struct UserId(pub i64);
             pub fn broadcast_message<'py>(
                 py: ::pyo3::Python<'py>,
                 message: &str,

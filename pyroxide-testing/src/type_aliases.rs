@@ -1,3 +1,5 @@
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct UserId(pub i64);
 pub fn broadcast_message<'py>(
     py: ::pyo3::Python<'py>,
     message: &str,

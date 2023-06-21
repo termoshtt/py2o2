@@ -47,9 +47,17 @@ pub struct Function {
     pub r#return: Type,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+pub struct TypeDefinition {
+    pub name: String,
+    pub module: String,
+    pub supertype: Type,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Interface {
     pub functions: BTreeMap<String, Function>,
+    pub type_definitions: BTreeMap<String, TypeDefinition>,
 }
 
 impl Interface {
@@ -339,6 +347,7 @@ mod test {
                     },
                 },
             },
+            type_definitions: {},
         }
         "###);
 
@@ -566,6 +575,15 @@ mod test {
                             ),
                         ],
                     },
+                },
+            },
+            type_definitions: {
+                "UserId": TypeDefinition {
+                    name: "UserId",
+                    module: "type_aliases",
+                    supertype: Primitive(
+                        Int,
+                    ),
                 },
             },
         }
