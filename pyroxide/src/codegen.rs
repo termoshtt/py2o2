@@ -112,7 +112,7 @@ pub fn generate(module_name: &str, interface: &Interface, bare: bool) -> Result<
     let typedef_tt = interface
         .type_definitions
         .values()
-        .map(|typedef| generate_type_definitions(typedef))
+        .map(generate_type_definitions)
         .collect::<Result<Vec<_>>>()?;
     if !bare {
         let module_ident = syn::Ident::new(module_name, Span::call_site());
