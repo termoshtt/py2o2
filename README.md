@@ -1,4 +1,4 @@
-pyroxide
+py2o2
 ==========
 Create Rust binding from Python type annotations
 

@@ -1,5 +1,5 @@
 [package]
-name = "pyroxide-testing"
+name = "py2o2-testing"
 version = "0.1.0"
 edition = "2021"
 
@@ -13,5 +13,5 @@ features = ["auto-initialize"]
 [build-dependencies]
 anyhow = "1"
 
-[build-dependencies.pyroxide]
-path = "../pyroxide"
+[build-dependencies.py2o2]
+path = "../py2o2"
