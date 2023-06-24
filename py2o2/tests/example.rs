@@ -126,8 +126,7 @@ fn inspect() -> Result<()> {
                 }
             }
         },
-        "type_definitions": {},
-        "unions": {}
+        "type_definitions": {}
     }
     "###);
 
@@ -231,7 +230,6 @@ fn inspect() -> Result<()> {
             },
         },
         type_definitions: {},
-        unions: {},
     }
     "###);
 

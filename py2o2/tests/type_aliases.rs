@@ -129,8 +129,7 @@ fn type_aliases() -> Result<()> {
                     "name": "int"
                 }
             }
-        },
-        "unions": {}
+        }
     }
     "###);
 
@@ -237,7 +236,6 @@ fn type_aliases() -> Result<()> {
                 ),
             },
         },
-        unions: {},
     }
     "###);
 
