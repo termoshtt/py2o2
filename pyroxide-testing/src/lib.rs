@@ -34,6 +34,11 @@ fn type_aliases() -> Result<()> {
     Python::with_gil(|py| {
         let out = type_aliases::scale(py, 2.0, PyList::new(py, [1.0, 2.0, 3.0]))?;
         dbg!(out);
+
+        let id = type_aliases::UserId(124);
+        let out = type_aliases::get_user_name(py, id)?;
+        assert_eq!(out.to_str()?, "ID = 124");
+
         Ok(())
     })
 }

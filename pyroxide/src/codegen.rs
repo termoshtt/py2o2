@@ -18,6 +18,11 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
             syn::parse_quote! { (#(#tags),*) }
         }
         Type::List { .. } => syn::parse_quote! { &::pyo3::types::PyList },
+        Type::Dict { .. } => syn::parse_quote! { &::pyo3::types::PyDict },
+        Type::UserDefined { name, .. } => {
+            let ty = syn::Ident::new(name, Span::call_site());
+            syn::parse_quote!(#ty)
+        }
     }
 }
 
@@ -31,8 +36,11 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
             let tags: Vec<syn::Type> = tags.iter().map(as_output_type).collect();
             syn::parse_quote! { (#(#tags),*) }
         }
-        Type::List { .. } => {
-            syn::parse_quote! { &'py ::pyo3::types::PyList }
+        Type::List { .. } => syn::parse_quote! { &'py ::pyo3::types::PyList },
+        Type::Dict { .. } => syn::parse_quote! { &'py ::pyo3::types::PyDict },
+        Type::UserDefined { name, .. } => {
+            let ty = syn::Ident::new(name, Span::call_site());
+            syn::parse_quote!(#ty)
         }
     }
 }
@@ -76,6 +84,24 @@ pub fn generate_function(module_name: &str, f: &Function) -> Result<TokenStream2
     })
 }
 
+pub fn generate_type_definitions(typedef: &TypeDefinition) -> Result<TokenStream2> {
+    let TypeDefinition {
+        name, supertype, ..
+    } = typedef;
+    let inner = as_output_type(supertype);
+    let name = syn::Ident::new(name, Span::call_site());
+    Ok(quote! {
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        pub struct #name(pub #inner);
+
+        impl ::pyo3::conversion::IntoPy<::pyo3::PyObject> for #name {
+            fn into_py(self, py: ::pyo3::Python<'_>) -> ::pyo3::PyObject {
+                self.0.into_py(py)
+            }
+        }
+    })
+}
+
 pub fn generate(module_name: &str, interface: &Interface, bare: bool) -> Result<String> {
     let mut tt = Vec::new();
     let f_tt = interface
@@ -83,15 +109,22 @@ pub fn generate(module_name: &str, interface: &Interface, bare: bool) -> Result<
         .values()
         .map(|f| generate_function(module_name, f))
         .collect::<Result<Vec<_>>>()?;
+    let typedef_tt = interface
+        .type_definitions
+        .values()
+        .map(generate_type_definitions)
+        .collect::<Result<Vec<_>>>()?;
     if !bare {
         let module_ident = syn::Ident::new(module_name, Span::call_site());
         tt.push(quote! {
             pub mod #module_ident {
+                #(#typedef_tt)*
                 #(#f_tt)*
             }
         })
     } else {
         tt.push(quote! {
+            #(#typedef_tt)*
             #(#f_tt)*
         })
     }
@@ -194,6 +227,34 @@ mod test {
         std::env::set_var("PYTHONPATH", PYTHON_ROOT);
         let interface = Interface::from_py_module("type_aliases")?;
         insta::assert_snapshot!(generate("type_aliases", &interface, true)?, @r###"
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        pub struct UserId(pub i64);
+        impl ::pyo3::conversion::IntoPy<::pyo3::PyObject> for UserId {
+            fn into_py(self, py: ::pyo3::Python<'_>) -> ::pyo3::PyObject {
+                self.0.into_py(py)
+            }
+        }
+        pub fn broadcast_message<'py>(
+            py: ::pyo3::Python<'py>,
+            message: &str,
+            servers: &::pyo3::types::PyList,
+        ) -> ::pyo3::PyResult<()> {
+            let _ = py
+                .import("type_aliases")?
+                .getattr("broadcast_message")?
+                .call((message, servers), None)?;
+            Ok(())
+        }
+        pub fn get_user_name<'py>(
+            py: ::pyo3::Python<'py>,
+            user_id: UserId,
+        ) -> ::pyo3::PyResult<&'py ::pyo3::types::PyString> {
+            let result = py
+                .import("type_aliases")?
+                .getattr("get_user_name")?
+                .call((user_id,), None)?;
+            Ok(result.extract()?)
+        }
         pub fn scale<'py>(
             py: ::pyo3::Python<'py>,
             scalar: f64,
@@ -209,6 +270,34 @@ mod test {
 
         insta::assert_snapshot!(generate("example", &interface, false)?, @r###"
         pub mod example {
+            #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+            pub struct UserId(pub i64);
+            impl ::pyo3::conversion::IntoPy<::pyo3::PyObject> for UserId {
+                fn into_py(self, py: ::pyo3::Python<'_>) -> ::pyo3::PyObject {
+                    self.0.into_py(py)
+                }
+            }
+            pub fn broadcast_message<'py>(
+                py: ::pyo3::Python<'py>,
+                message: &str,
+                servers: &::pyo3::types::PyList,
+            ) -> ::pyo3::PyResult<()> {
+                let _ = py
+                    .import("example")?
+                    .getattr("broadcast_message")?
+                    .call((message, servers), None)?;
+                Ok(())
+            }
+            pub fn get_user_name<'py>(
+                py: ::pyo3::Python<'py>,
+                user_id: UserId,
+            ) -> ::pyo3::PyResult<&'py ::pyo3::types::PyString> {
+                let result = py
+                    .import("example")?
+                    .getattr("get_user_name")?
+                    .call((user_id,), None)?;
+                Ok(result.extract()?)
+            }
             pub fn scale<'py>(
                 py: ::pyo3::Python<'py>,
                 scalar: f64,

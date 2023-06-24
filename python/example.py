@@ -19,9 +19,9 @@ def a5(x: int) -> str:
     return "x is " + str(x)
 
 
-def a6() -> (int, str):
+def a6() -> tuple[int, str]:
     return 6, "This is a6"
 
 
-def a7(x: int) -> (int, str, float):
+def a7(x: int) -> tuple[int, str, float]:
     return 2 * x, "x si " + str(x), float(x)

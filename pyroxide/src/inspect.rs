@@ -4,12 +4,24 @@ use serde::Deserialize;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 #[serde(tag = "kind")]
 pub enum Type {
     Primitive(Primitive),
-    Tuple { tags: Vec<Type> },
-    List { inner: Vec<Type> },
+    Tuple {
+        tags: Vec<Type>,
+    },
+    List {
+        inner: Vec<Type>,
+    },
+    Dict {
+        inner: Vec<Type>,
+    },
+    UserDefined {
+        module: String,
+        name: String,
+        supertype: Box<Type>,
+    },
     None,
 }
 
@@ -35,9 +47,17 @@ pub struct Function {
     pub r#return: Type,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+pub struct TypeDefinition {
+    pub name: String,
+    pub module: String,
+    pub supertype: Type,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Interface {
     pub functions: BTreeMap<String, Function>,
+    pub type_definitions: BTreeMap<String, TypeDefinition>,
 }
 
 impl Interface {
@@ -223,7 +243,8 @@ mod test {
                         ]
                     }
                 }
-            }
+            },
+            "type_definitions": {}
         }
         "###);
 
@@ -326,6 +347,7 @@ mod test {
                     },
                 },
             },
+            type_definitions: {},
         }
         "###);
 
@@ -339,6 +361,81 @@ mod test {
         insta::assert_snapshot!(json, @r###"
         {
             "functions": {
+                "broadcast_message": {
+                    "name": "broadcast_message",
+                    "parameters": [
+                        {
+                            "name": "message",
+                            "type": {
+                                "kind": "primitive",
+                                "name": "str"
+                            }
+                        },
+                        {
+                            "name": "servers",
+                            "type": {
+                                "kind": "list",
+                                "inner": [
+                                    {
+                                        "kind": "tuple",
+                                        "tags": [
+                                            {
+                                                "kind": "tuple",
+                                                "tags": [
+                                                    {
+                                                        "kind": "primitive",
+                                                        "name": "str"
+                                                    },
+                                                    {
+                                                        "kind": "primitive",
+                                                        "name": "int"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "kind": "dict",
+                                                "inner": [
+                                                    {
+                                                        "kind": "primitive",
+                                                        "name": "str"
+                                                    },
+                                                    {
+                                                        "kind": "primitive",
+                                                        "name": "str"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "return": {
+                        "kind": "none"
+                    }
+                },
+                "get_user_name": {
+                    "name": "get_user_name",
+                    "parameters": [
+                        {
+                            "name": "user_id",
+                            "type": {
+                                "kind": "user_defined",
+                                "module": "type_aliases",
+                                "name": "UserId",
+                                "supertype": {
+                                    "kind": "primitive",
+                                    "name": "int"
+                                }
+                            }
+                        }
+                    ],
+                    "return": {
+                        "kind": "primitive",
+                        "name": "str"
+                    }
+                },
                 "scale": {
                     "name": "scale",
                     "parameters": [
@@ -372,6 +469,16 @@ mod test {
                         ]
                     }
                 }
+            },
+            "type_definitions": {
+                "UserId": {
+                    "module": "type_aliases",
+                    "name": "UserId",
+                    "supertype": {
+                        "kind": "primitive",
+                        "name": "int"
+                    }
+                }
             }
         }
         "###);
@@ -380,6 +487,67 @@ mod test {
         insta::assert_debug_snapshot!(interface, @r###"
         Interface {
             functions: {
+                "broadcast_message": Function {
+                    name: "broadcast_message",
+                    parameters: [
+                        Parameter {
+                            name: "message",
+                            type: Primitive(
+                                Str,
+                            ),
+                        },
+                        Parameter {
+                            name: "servers",
+                            type: List {
+                                inner: [
+                                    Tuple {
+                                        tags: [
+                                            Tuple {
+                                                tags: [
+                                                    Primitive(
+                                                        Str,
+                                                    ),
+                                                    Primitive(
+                                                        Int,
+                                                    ),
+                                                ],
+                                            },
+                                            Dict {
+                                                inner: [
+                                                    Primitive(
+                                                        Str,
+                                                    ),
+                                                    Primitive(
+                                                        Str,
+                                                    ),
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                    return: None,
+                },
+                "get_user_name": Function {
+                    name: "get_user_name",
+                    parameters: [
+                        Parameter {
+                            name: "user_id",
+                            type: UserDefined {
+                                module: "type_aliases",
+                                name: "UserId",
+                                supertype: Primitive(
+                                    Int,
+                                ),
+                            },
+                        },
+                    ],
+                    return: Primitive(
+                        Str,
+                    ),
+                },
                 "scale": Function {
                     name: "scale",
                     parameters: [
@@ -407,6 +575,15 @@ mod test {
                             ),
                         ],
                     },
+                },
+            },
+            type_definitions: {
+                "UserId": TypeDefinition {
+                    name: "UserId",
+                    module: "type_aliases",
+                    supertype: Primitive(
+                        Int,
+                    ),
                 },
             },
         }
