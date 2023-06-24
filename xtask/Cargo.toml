@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies]
 anyhow = "1"
 
-[dependencies.pyroxide]
-path = "../pyroxide"
+[dependencies.py2o2]
+path = "../py2o2"

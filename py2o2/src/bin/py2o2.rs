@@ -29,6 +29,6 @@ fn main() -> Result<()> {
     } else {
         cli.python_module_name_or_path
     };
-    println!("{}", pyroxide::generate(&module_name, cli.bare)?);
+    println!("{}", py2o2::generate(&module_name, cli.bare)?);
     Ok(())
 }

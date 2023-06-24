@@ -1,3 +1,3 @@
 [workspace]
-members = ["pyroxide", "pyroxide-testing", "xtask"]
-default-members = ["pyroxide"]
+members = ["py2o2", "py2o2-testing", "xtask"]
+default-members = ["py2o2"]
