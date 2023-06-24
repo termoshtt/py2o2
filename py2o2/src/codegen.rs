@@ -23,6 +23,9 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
             let ty = syn::Ident::new(name, Span::call_site());
             syn::parse_quote!(#ty)
         }
+        Type::Union { .. } => {
+            unimplemented!()
+        }
     }
 }
 
@@ -41,6 +44,9 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
         Type::UserDefined { name, .. } => {
             let ty = syn::Ident::new(name, Span::call_site());
             syn::parse_quote!(#ty)
+        }
+        Type::Union { .. } => {
+            unimplemented!()
         }
     }
 }

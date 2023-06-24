@@ -22,6 +22,9 @@ pub enum Type {
         name: String,
         supertype: Box<Type>,
     },
+    Union {
+        args: Vec<Type>,
+    },
     None,
 }
 

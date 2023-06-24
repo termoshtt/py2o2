@@ -11,33 +11,7 @@ fn inspect() -> Result<()> {
     insta::assert_snapshot!(json, @r###"
     {
         "functions": {},
-        "type_definitions": {},
-        "unions": {
-            "union_new": {
-                "args": [
-                    {
-                        "kind": "primitive",
-                        "name": "int"
-                    },
-                    {
-                        "kind": "primitive",
-                        "name": "str"
-                    }
-                ]
-            },
-            "union_old": {
-                "args": [
-                    {
-                        "kind": "primitive",
-                        "name": "int"
-                    },
-                    {
-                        "kind": "primitive",
-                        "name": "str"
-                    }
-                ]
-            }
-        }
+        "type_definitions": {}
     }
     "###);
 
@@ -46,28 +20,6 @@ fn inspect() -> Result<()> {
     Interface {
         functions: {},
         type_definitions: {},
-        unions: {
-            "union_new": Union {
-                args: [
-                    Primitive(
-                        Int,
-                    ),
-                    Primitive(
-                        Str,
-                    ),
-                ],
-            },
-            "union_old": Union {
-                args: [
-                    Primitive(
-                        Int,
-                    ),
-                    Primitive(
-                        Str,
-                    ),
-                ],
-            },
-        },
     }
     "###);
 
