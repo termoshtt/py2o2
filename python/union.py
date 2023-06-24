@@ -1,4 +1,9 @@
 from typing import Union
 
-union_old: Union[int, str]
-union_new: int | str
+
+def f_new(a: int | str) -> int | str:
+    return a
+
+
+def f_old(a: Union[int, str]) -> Union[int, str]:
+    return a
