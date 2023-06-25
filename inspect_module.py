@@ -33,6 +33,8 @@ def type_as_tag(ty: type) -> dict:
             "name": ty.__name__,
             "supertype": type_as_tag(ty.__supertype__),
         }
+    if type(ty) in [types.UnionType, typing._UnionGenericAlias]:
+        return {"kind": "union", "args": [type_as_tag(t) for t in ty.__args__]}
     raise NotImplementedError(f"Unsupported type = {ty}, {type(ty)}")
 
 
