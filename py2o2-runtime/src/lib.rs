@@ -2,8 +2,9 @@ pub use pyo3;
 
 use pyo3::{
     conversion::{FromPyObject, IntoPy},
+    exceptions::PyTypeError,
     types::PyType,
-    Py, PyAny, PyResult, Python,
+    Py, PyAny, PyErr, PyResult, Python,
 };
 use std::{any::TypeId, collections::BTreeMap};
 
@@ -43,7 +44,17 @@ where
             return Ok(Enum2::Item2(T2::extract(ob)?));
         }
 
-        unreachable!()
+        let err = Python::with_gil(|py| {
+            PyErr::from_value(
+                PyTypeError::new_err(format!(
+                    "None of {:?} or {:?}",
+                    TypeId::of::<T1>(),
+                    TypeId::of::<T2>()
+                ))
+                .value(py),
+            )
+        });
+        Err(err)
     }
 }
 
@@ -65,6 +76,9 @@ mod tests {
             let p2: Py<PyAny> = v2.into_py(py);
             let e: Enum2<i32, f32> = p2.extract(py)?;
             assert_eq!(e, Enum2::Item2(v2));
+
+            let p3: Py<PyAny> = "test".into_py(py);
+            assert!(p3.extract::<Enum2<i32, f32>>(py).is_err());
 
             Ok(())
         })?;
