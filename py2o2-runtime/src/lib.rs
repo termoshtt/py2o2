@@ -16,6 +16,19 @@ pub enum Enum2<T1, T2> {
 
 static mut TYPE_MAPPING: BTreeMap<TypeId, Py<PyType>> = BTreeMap::new();
 
+fn get_py_type<'py, T>(py: Python<'py>) -> &'py PyType
+where
+    T: 'static + IntoPy<Py<PyAny>> + Default,
+{
+    // This must be called from the thread which has Python's GIL.
+    unsafe { TYPE_MAPPING.entry(TypeId::of::<T>()) }
+        .or_insert_with(|| {
+            let value = T::default().into_py(py);
+            value.as_ref(py).get_type().extract().unwrap()
+        })
+        .as_ref(py)
+}
+
 impl<'s, T1, T2> FromPyObject<'s> for Enum2<T1, T2>
 where
     T1: 'static + FromPyObject<'s> + IntoPy<Py<PyAny>> + Default,
@@ -23,38 +36,22 @@ where
 {
     fn extract(ob: &'s PyAny) -> PyResult<Self> {
         let ty = ob.get_type();
-
-        let t1_ty = unsafe { TYPE_MAPPING.entry(TypeId::of::<T1>()) }.or_insert_with(|| {
-            Python::with_gil(|py| {
-                let value = T1::default().into_py(py);
-                value.as_ref(py).get_type().extract().unwrap()
-            })
-        });
-        if ty.is(t1_ty) {
-            return Ok(Enum2::Item1(T1::extract(ob)?));
-        }
-
-        let t2_ty = unsafe { TYPE_MAPPING.entry(TypeId::of::<T2>()) }.or_insert_with(|| {
-            Python::with_gil(|py| {
-                let value = T2::default().into_py(py);
-                value.as_ref(py).get_type().extract().unwrap()
-            })
-        });
-        if ty.is(t2_ty) {
-            return Ok(Enum2::Item2(T2::extract(ob)?));
-        }
-
-        let err = Python::with_gil(|py| {
-            PyErr::from_value(
+        Python::with_gil(|py| {
+            if ty.is(get_py_type::<T1>(py)) {
+                return Ok(Enum2::Item1(T1::extract(ob)?));
+            }
+            if ty.is(get_py_type::<T2>(py)) {
+                return Ok(Enum2::Item2(T2::extract(ob)?));
+            }
+            Err(PyErr::from_value(
                 PyTypeError::new_err(format!(
                     "None of {:?} or {:?}",
                     TypeId::of::<T1>(),
                     TypeId::of::<T2>()
                 ))
                 .value(py),
-            )
-        });
-        Err(err)
+            ))
+        })
     }
 }
 

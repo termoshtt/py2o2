@@ -1,6 +1,7 @@
 #![allow(dead_code, unused_imports)]
 
 use anyhow::Result;
+use py2o2_runtime::Enum2;
 use pyo3::{prelude::*, types::*};
 
 pub mod example;
@@ -39,6 +40,32 @@ fn type_aliases() -> Result<()> {
         let out = type_aliases::get_user_name(py, id)?;
         assert_eq!(out.to_str()?, "ID = 124");
 
+        Ok(())
+    })
+}
+
+pub trait OneOf: IntoPy<PyObject> {}
+
+impl OneOf for i64 {}
+impl OneOf for &'_ str {}
+
+fn union_f_new<'py>(py: Python<'py>, a: impl OneOf) -> PyResult<Enum2<i64, String>> {
+    Ok(py
+        .import("union")?
+        .getattr("f_new")?
+        .call((a.into_py(py),), None)?
+        .extract()?)
+}
+
+#[test]
+fn union() -> Result<()> {
+    std::env::set_var("PYTHONPATH", PYTHON_ROOT);
+    Python::with_gil(|py| {
+        let out = union_f_new(py, 42)?;
+        assert_eq!(out, Enum2::Item1(42));
+
+        let out = union_f_new(py, "homhom")?;
+        assert_eq!(out, Enum2::Item2("homhom".to_string()));
         Ok(())
     })
 }
