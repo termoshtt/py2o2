@@ -2,9 +2,20 @@ use crate::inspect::*;
 use anyhow::Result;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 fn format(tt: TokenStream2) -> String {
     prettyplease::unparse(&syn::parse_file(&tt.to_string()).unwrap())
+}
+
+fn union_trait_ident(args: &[Type]) -> syn::Ident {
+    let mut s = DefaultHasher::new();
+    for arg in args {
+        arg.hash(&mut s);
+    }
+    let hash = s.finish();
+    quote::format_ident!("Union{:x}", hash)
 }
 
 pub fn as_input_type(ty: &Type) -> syn::Type {
@@ -23,8 +34,9 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
             let ty = syn::Ident::new(name, Span::call_site());
             syn::parse_quote!(#ty)
         }
-        Type::Union { .. } => {
-            unimplemented!()
+        Type::Union { args } => {
+            let ident = union_trait_ident(&args);
+            syn::parse_quote!(impl #ident)
         }
     }
 }
@@ -45,8 +57,11 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
             let ty = syn::Ident::new(name, Span::call_site());
             syn::parse_quote!(#ty)
         }
-        Type::Union { .. } => {
-            unimplemented!()
+        Type::Union { args } => {
+            let n = args.len();
+            let enum_ = quote::format_ident!("Enum{}", n);
+            let out: Vec<_> = args.iter().map(as_output_type).collect();
+            syn::parse_quote!( ::py2o2_runtime::#enum_ <#(#out),*>)
         }
     }
 }
