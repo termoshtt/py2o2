@@ -2,9 +2,20 @@ use crate::inspect::*;
 use anyhow::Result;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
+use std::collections::{hash_map::DefaultHasher, BTreeMap};
+use std::hash::{Hash, Hasher};
 
 fn format(tt: TokenStream2) -> String {
     prettyplease::unparse(&syn::parse_file(&tt.to_string()).unwrap())
+}
+
+fn union_trait_ident(args: &[Type]) -> syn::Ident {
+    let mut s = DefaultHasher::new();
+    for arg in args {
+        arg.hash(&mut s);
+    }
+    let hash = s.finish();
+    quote::format_ident!("Union{:x}", hash)
 }
 
 pub fn as_input_type(ty: &Type) -> syn::Type {
@@ -22,6 +33,10 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
         Type::UserDefined { name, .. } => {
             let ty = syn::Ident::new(name, Span::call_site());
             syn::parse_quote!(#ty)
+        }
+        Type::Union { args } => {
+            let ident = union_trait_ident(args);
+            syn::parse_quote!(impl #ident)
         }
     }
 }
@@ -41,6 +56,12 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
         Type::UserDefined { name, .. } => {
             let ty = syn::Ident::new(name, Span::call_site());
             syn::parse_quote!(#ty)
+        }
+        Type::Union { args } => {
+            let n = args.len();
+            let enum_ = quote::format_ident!("Enum{}", n);
+            let out: Vec<_> = args.iter().map(as_output_type).collect();
+            syn::parse_quote!( ::py2o2_runtime::#enum_ <#(#out),*>)
         }
     }
 }
@@ -102,6 +123,35 @@ pub fn generate_type_definitions(typedef: &TypeDefinition) -> Result<TokenStream
     })
 }
 
+pub fn generate_union_traits(interface: &Interface) -> Result<TokenStream2> {
+    let mut traits: BTreeMap<syn::Ident, TokenStream2> = BTreeMap::new();
+    for f in interface.functions.values() {
+        for p in &f.parameters {
+            match &p.r#type {
+                Type::Union { args } => {
+                    let trait_ident = union_trait_ident(args);
+                    let args: Vec<_> = args
+                        .iter()
+                        .map(|ty| match ty {
+                            Type::Primitive(_) => as_input_type(ty),
+                            _ => unimplemented!(),
+                        })
+                        .collect();
+                    traits.entry(trait_ident.clone()).or_insert(quote! {
+                        pub trait #trait_ident: ::pyo3::conversion::IntoPy<::pyo3::PyObject> {}
+                        #(
+                        impl #trait_ident for #args {}
+                        )*
+                    });
+                }
+                _ => continue,
+            }
+        }
+    }
+    let traits: Vec<_> = traits.values().collect();
+    Ok(quote! { #(#traits)* })
+}
+
 pub fn generate(module_name: &str, interface: &Interface, bare: bool) -> Result<String> {
     let mut tt = Vec::new();
     let f_tt = interface
@@ -114,17 +164,20 @@ pub fn generate(module_name: &str, interface: &Interface, bare: bool) -> Result<
         .values()
         .map(generate_type_definitions)
         .collect::<Result<Vec<_>>>()?;
+    let union_traits = generate_union_traits(interface)?;
     if !bare {
         let module_ident = syn::Ident::new(module_name, Span::call_site());
         tt.push(quote! {
             pub mod #module_ident {
                 #(#typedef_tt)*
+                #union_traits
                 #(#f_tt)*
             }
         })
     } else {
         tt.push(quote! {
             #(#typedef_tt)*
+            #union_traits
             #(#f_tt)*
         })
     }

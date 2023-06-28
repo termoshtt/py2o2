@@ -10,6 +10,9 @@ anyhow = "1"
 version = "0.18.3"
 features = ["auto-initialize"]
 
+[dependencies.py2o2-runtime]
+path = "../py2o2-runtime"
+
 [build-dependencies]
 anyhow = "1"
 
