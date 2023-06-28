@@ -1,12 +1,44 @@
 pub use pyo3;
 
 use pyo3::{
-    conversion::{FromPyObject, IntoPy},
+    conversion::FromPyObject,
     exceptions::PyTypeError,
-    types::PyType,
-    Py, PyAny, PyErr, PyResult, Python,
+    type_object::PyTypeInfo,
+    types::{PyFloat, PyLong, PyString},
+    PyAny, PyResult,
 };
-use std::{any::TypeId, collections::BTreeMap};
+
+pub trait AsPyType {
+    fn is_type_of(obj: &PyAny) -> bool;
+}
+
+impl AsPyType for i32 {
+    fn is_type_of(obj: &PyAny) -> bool {
+        PyLong::is_type_of(obj)
+    }
+}
+impl AsPyType for i64 {
+    fn is_type_of(obj: &PyAny) -> bool {
+        PyLong::is_type_of(obj)
+    }
+}
+
+impl AsPyType for f32 {
+    fn is_type_of(obj: &PyAny) -> bool {
+        PyFloat::is_type_of(obj)
+    }
+}
+impl AsPyType for f64 {
+    fn is_type_of(obj: &PyAny) -> bool {
+        PyFloat::is_type_of(obj)
+    }
+}
+
+impl AsPyType for &PyString {
+    fn is_type_of(obj: &PyAny) -> bool {
+        PyString::is_type_of(obj)
+    }
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Enum2<T1, T2> {
@@ -14,44 +46,19 @@ pub enum Enum2<T1, T2> {
     Item2(T2),
 }
 
-static mut TYPE_MAPPING: BTreeMap<TypeId, Py<PyType>> = BTreeMap::new();
-
-fn get_py_type<'py, T>(py: Python<'py>) -> &'py PyType
-where
-    T: 'static + IntoPy<Py<PyAny>> + Default,
-{
-    // This must be called from the thread which has Python's GIL.
-    unsafe { TYPE_MAPPING.entry(TypeId::of::<T>()) }
-        .or_insert_with(|| {
-            let value = T::default().into_py(py);
-            value.as_ref(py).get_type().extract().unwrap()
-        })
-        .as_ref(py)
-}
-
 impl<'s, T1, T2> FromPyObject<'s> for Enum2<T1, T2>
 where
-    T1: 'static + FromPyObject<'s> + IntoPy<Py<PyAny>> + Default,
-    T2: 'static + FromPyObject<'s> + IntoPy<Py<PyAny>> + Default,
+    T1: AsPyType + FromPyObject<'s>,
+    T2: AsPyType + FromPyObject<'s>,
 {
     fn extract(ob: &'s PyAny) -> PyResult<Self> {
-        let ty = ob.get_type();
-        Python::with_gil(|py| {
-            if ty.is(get_py_type::<T1>(py)) {
-                return Ok(Enum2::Item1(T1::extract(ob)?));
-            }
-            if ty.is(get_py_type::<T2>(py)) {
-                return Ok(Enum2::Item2(T2::extract(ob)?));
-            }
-            Err(PyErr::from_value(
-                PyTypeError::new_err(format!(
-                    "None of {:?} or {:?}",
-                    TypeId::of::<T1>(),
-                    TypeId::of::<T2>()
-                ))
-                .value(py),
-            ))
-        })
+        if T1::is_type_of(ob) {
+            return Ok(Enum2::Item1(ob.extract()?));
+        }
+        if T2::is_type_of(ob) {
+            return Ok(Enum2::Item2(ob.extract()?));
+        }
+        Err(PyTypeError::new_err("Type mismatch"))
     }
 }
 
@@ -59,6 +66,7 @@ where
 mod tests {
     use super::*;
     use anyhow::Result;
+    use pyo3::{IntoPy, Py, Python};
 
     #[test]
     fn convert() -> Result<()> {

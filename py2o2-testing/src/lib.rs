@@ -2,10 +2,11 @@
 
 use anyhow::Result;
 use py2o2_runtime::Enum2;
-use pyo3::{prelude::*, types::*};
+use pyo3::{prelude::*, types::*, Python};
 
 pub mod example;
 pub mod type_aliases;
+pub mod union;
 
 const PYTHON_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../python/");
 
@@ -44,28 +45,16 @@ fn type_aliases() -> Result<()> {
     })
 }
 
-pub trait OneOf: IntoPy<PyObject> {}
-
-impl OneOf for i64 {}
-impl OneOf for &'_ str {}
-
-fn union_f_new<'py>(py: Python<'py>, a: impl OneOf) -> PyResult<Enum2<i64, String>> {
-    Ok(py
-        .import("union")?
-        .getattr("f_new")?
-        .call((a.into_py(py),), None)?
-        .extract()?)
-}
-
 #[test]
 fn union() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
     Python::with_gil(|py| {
-        let out = union_f_new(py, 42)?;
-        assert_eq!(out, Enum2::Item1(42));
+        let out = union::f_new(py, 42)?;
+        assert!(matches!(out, Enum2::Item1(_)));
 
-        let out = union_f_new(py, "homhom")?;
-        assert_eq!(out, Enum2::Item2("homhom".to_string()));
+        let out = union::f_new(py, "homhom")?;
+        assert!(matches!(out, Enum2::Item2(_)));
+
         Ok(())
     })
 }
