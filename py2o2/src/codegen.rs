@@ -35,7 +35,7 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
             syn::parse_quote!(#ty)
         }
         Type::Union { args } => {
-            let ident = union_trait_ident(&args);
+            let ident = union_trait_ident(args);
             syn::parse_quote!(impl #ident)
         }
     }
@@ -125,11 +125,11 @@ pub fn generate_type_definitions(typedef: &TypeDefinition) -> Result<TokenStream
 
 pub fn generate_union_traits(interface: &Interface) -> Result<TokenStream2> {
     let mut traits: BTreeMap<syn::Ident, TokenStream2> = BTreeMap::new();
-    for (_name, f) in &interface.functions {
+    for f in interface.functions.values() {
         for p in &f.parameters {
             match &p.r#type {
                 Type::Union { args } => {
-                    let trait_ident = union_trait_ident(&args);
+                    let trait_ident = union_trait_ident(args);
                     let args: Vec<_> = args
                         .iter()
                         .map(|ty| match ty {
