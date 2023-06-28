@@ -157,6 +157,9 @@ fn codegen() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
     let interface = Interface::from_py_module(TARGET)?;
     insta::assert_snapshot!(generate(TARGET, &interface, true)?, @r###"
+    pub trait Union5d6b010906f780ce: ::pyo3::conversion::IntoPy<::pyo3::PyObject> {}
+    impl Union5d6b010906f780ce for i64 {}
+    impl Union5d6b010906f780ce for &str {}
     pub fn f_new<'py>(
         py: ::pyo3::Python<'py>,
         a: impl Union5d6b010906f780ce,
@@ -175,6 +178,9 @@ fn codegen() -> Result<()> {
 
     insta::assert_snapshot!(generate(TARGET, &interface, false)?, @r###"
     pub mod union {
+        pub trait Union5d6b010906f780ce: ::pyo3::conversion::IntoPy<::pyo3::PyObject> {}
+        impl Union5d6b010906f780ce for i64 {}
+        impl Union5d6b010906f780ce for &str {}
         pub fn f_new<'py>(
             py: ::pyo3::Python<'py>,
             a: impl Union5d6b010906f780ce,
