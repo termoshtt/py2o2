@@ -20,10 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - uses: actions-rs/cargo@v1
+    - name: py2o2-inspect
+      uses: actions-rs/cargo@v1
       with:
         command: run
-        args: --bin py2o2 python/example.py
+        args: inspect python/example.py
+    - name: py2o2-codegen
+      uses: actions-rs/cargo@v1
+      with:
+        command: run
+        args: codegen python/example.py
 
   codegen:
     runs-on: ubuntu-latest
