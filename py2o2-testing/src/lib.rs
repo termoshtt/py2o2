@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use py2o2_runtime::Enum2;
-use pyo3::{prelude::*, types::*, Python};
+use pyo3::{impl_::pyfunction::wrap_pyfunction_impl, prelude::*, types::*, Python};
 
 pub mod example;
 pub mod type_aliases;
@@ -55,6 +55,22 @@ fn union() -> Result<()> {
         let out = union::f_new(py, "homhom")?;
         assert!(matches!(out, Enum2::Item2(_)));
 
+        Ok(())
+    })
+}
+
+fn feeder<'py>(py: Python<'py>, f: &'py PyCFunction) -> PyResult<()> {
+    py.import("callable")?.getattr("feeder")?.call((f,), None)?;
+    Ok(())
+}
+
+#[test]
+fn callable() -> Result<()> {
+    std::env::set_var("PYTHONPATH", PYTHON_ROOT);
+    Python::with_gil(|py| {
+        let f = |_args: &PyTuple, _kwargs: Option<&PyDict>| -> PyResult<_> { Ok(1) };
+        let f = PyCFunction::new_closure(py, None, None, f)?;
+        feeder(py, f)?;
         Ok(())
     })
 }
