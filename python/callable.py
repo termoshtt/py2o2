@@ -4,7 +4,9 @@ from collections.abc import Callable
 
 
 def feeder(get_next_item: Callable[[], str]) -> None:
-    pass
+    print(f"first  = {get_next_item()}")
+    print(f"second = {get_next_item()}")
+    print(f"third  = {get_next_item()}")
 
 
 def async_query(
