@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use py2o2_runtime::Enum2;
-use pyo3::{impl_::pyfunction::wrap_pyfunction_impl, prelude::*, types::*, Python};
+use pyo3::{impl_::pyfunction::wrap_pyfunction_impl, intern, prelude::*, types::*, Python};
 
 pub mod example;
 pub mod type_aliases;
@@ -68,8 +68,20 @@ fn feeder<'py>(py: Python<'py>, f: &'py PyCFunction) -> PyResult<()> {
 fn callable() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
     Python::with_gil(|py| {
-        let f = |_args: &PyTuple, _kwargs: Option<&PyDict>| -> PyResult<_> { Ok(1) };
-        let f = PyCFunction::new_closure(py, None, None, f)?;
+        let f = PyCFunction::new_closure(
+            py,
+            None,
+            None,
+            |_args: &PyTuple, _kwargs: Option<&PyDict>| -> PyResult<Py<PyString>> {
+                static mut COUNT: usize = 0;
+                let current = unsafe {
+                    COUNT += 1;
+                    COUNT
+                };
+                let s = Python::with_gil(|py2| PyString::new(py2, &format!("{}", current)).into());
+                Ok(s)
+            },
+        )?;
         feeder(py, f)?;
         Ok(())
     })
