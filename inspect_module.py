@@ -40,7 +40,6 @@ def type_as_tag(ty: type) -> dict:
     if type(ty) in [types.UnionType, typing._UnionGenericAlias]:
         return {"kind": "union", "args": [type_as_tag(t) for t in ty.__args__]}
     if type(ty) == collections.abc._CallableGenericAlias:
-        print(ty.__args__)
         return {
             "kind": "callable",
             "args": [type_as_tag(t) for t in ty.__args__[:-1]],
