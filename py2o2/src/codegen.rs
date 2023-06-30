@@ -24,6 +24,9 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
         Type::Primitive(Primitive::Float) => syn::parse_quote!(f64),
         Type::Primitive(Primitive::Str) => syn::parse_quote!(&str),
         Type::None => syn::parse_quote!(()),
+        Type::Ellipsis | Type::Exception => {
+            unimplemented!()
+        }
         Type::Tuple { tags } => {
             let tags: Vec<syn::Type> = tags.iter().map(as_input_type).collect();
             syn::parse_quote! { (#(#tags),*) }
@@ -38,6 +41,13 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
             let ident = union_trait_ident(args);
             syn::parse_quote!(impl #ident)
         }
+        Type::Callable {
+            args: _,
+            r#return: _,
+        } => {
+            // FIXME
+            syn::parse_quote!(impl Fn())
+        }
     }
 }
 
@@ -47,6 +57,9 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
         Type::Primitive(Primitive::Float) => syn::parse_quote!(f64),
         Type::Primitive(Primitive::Str) => syn::parse_quote!(&'py ::pyo3::types::PyString),
         Type::None => syn::parse_quote!(()),
+        Type::Ellipsis | Type::Exception => {
+            unimplemented!()
+        }
         Type::Tuple { tags } => {
             let tags: Vec<syn::Type> = tags.iter().map(as_output_type).collect();
             syn::parse_quote! { (#(#tags),*) }
@@ -62,6 +75,13 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
             let enum_ = quote::format_ident!("Enum{}", n);
             let out: Vec<_> = args.iter().map(as_output_type).collect();
             syn::parse_quote!( ::py2o2_runtime::#enum_ <#(#out),*>)
+        }
+        Type::Callable {
+            args: _,
+            r#return: _,
+        } => {
+            // FIXME
+            syn::parse_quote!(Box<Fn()>)
         }
     }
 }

@@ -8,6 +8,8 @@ use std::collections::BTreeMap;
 #[serde(tag = "kind")]
 pub enum Type {
     Primitive(Primitive),
+    Exception,
+    Ellipsis,
     Tuple {
         tags: Vec<Type>,
     },
@@ -24,6 +26,10 @@ pub enum Type {
     },
     Union {
         args: Vec<Type>,
+    },
+    Callable {
+        args: Vec<Type>,
+        r#return: Box<Type>,
     },
     None,
 }
