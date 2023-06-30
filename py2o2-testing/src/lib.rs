@@ -64,6 +64,11 @@ fn feeder<'py>(py: Python<'py>, f: &'py PyCFunction) -> PyResult<()> {
     Ok(())
 }
 
+fn caller<'py>(py: Python<'py>, f: &'py PyCFunction) -> PyResult<()> {
+    py.import("callable")?.getattr("caller")?.call((f,), None)?;
+    Ok(())
+}
+
 #[test]
 fn callable() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
@@ -83,6 +88,18 @@ fn callable() -> Result<()> {
             },
         )?;
         feeder(py, f)?;
+
+        let g = PyCFunction::new_closure(
+            py,
+            None,
+            None,
+            |args: &PyTuple, _kwargs: Option<&PyDict>| -> PyResult<f64> {
+                let (a, b): (i64, f64) = args.extract()?;
+                Ok(a as f64 * b)
+            },
+        )?;
+        caller(py, g)?;
+
         Ok(())
     })
 }
