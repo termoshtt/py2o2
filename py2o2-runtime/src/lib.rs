@@ -1,12 +1,6 @@
 pub use pyo3;
 
-use pyo3::{
-    conversion::FromPyObject,
-    exceptions::PyTypeError,
-    type_object::PyTypeInfo,
-    types::{PyFloat, PyLong, PyString},
-    Py, PyAny, PyResult,
-};
+use pyo3::{conversion::*, exceptions::*, prelude::*, type_object::*, types::*};
 
 pub trait AsPyType {
     fn is_type_of(obj: &PyAny) -> bool;
@@ -23,7 +17,6 @@ macro_rules! impl_as_py_type {
 }
 impl_as_py_type!(i64, PyLong);
 impl_as_py_type!(f64, PyFloat);
-impl_as_py_type!(&PyString, PyString);
 
 impl<T: PyTypeInfo> AsPyType for Py<T> {
     fn is_type_of(obj: &PyAny) -> bool {
