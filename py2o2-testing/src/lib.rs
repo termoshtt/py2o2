@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use py2o2_runtime::Enum2;
-use pyo3::{impl_::pyfunction::wrap_pyfunction_impl, intern, prelude::*, types::*, Python};
+use pyo3::{prelude::*, types::*, Python};
 
 pub mod example;
 pub mod type_aliases;
@@ -59,39 +59,23 @@ fn union() -> Result<()> {
     })
 }
 
-fn feeder<'py>(py: Python<'py>, f: &'py PyCFunction) -> PyResult<()> {
+fn feeder<'py>(py: Python<'py>, f: impl Fn() -> String + Send + 'static) -> PyResult<()> {
+    let f = py2o2_runtime::as_pycfunc(py, move |_input: [usize; 0]| f())?;
     py.import("callable")?.getattr("feeder")?.call((f,), None)?;
     Ok(())
 }
 
-fn caller<'py>(py: Python<'py>, f: &'py PyCFunction) -> PyResult<()> {
+fn caller<'py>(py: Python<'py>, f: impl Fn((i64, f64)) -> f64 + Send + 'static) -> PyResult<()> {
+    let f = py2o2_runtime::as_pycfunc(py, f)?;
     py.import("callable")?.getattr("caller")?.call((f,), None)?;
     Ok(())
-}
-
-fn as_pycfunc<'py, F, Input, Output>(py: Python<'py>, f: F) -> PyResult<&'py PyCFunction>
-where
-    F: Fn(Input) -> Output + Send + 'static,
-    for<'a> Input: FromPyObject<'a>,
-    Output: IntoPy<Py<PyAny>>,
-{
-    PyCFunction::new_closure(
-        py,
-        None,
-        None,
-        move |args: &PyTuple, _kwargs: Option<&PyDict>| -> PyResult<Py<PyAny>> {
-            let input: Input = args.extract()?;
-            let out = f(input);
-            Python::with_gil(|py2| Ok(out.into_py(py2)))
-        },
-    )
 }
 
 #[test]
 fn callable() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
     Python::with_gil(|py| {
-        let f = as_pycfunc(py, |_input: [usize; 0]| -> String {
+        feeder(py, || {
             static mut COUNT: usize = 0;
             let current = unsafe {
                 COUNT += 1;
@@ -99,10 +83,8 @@ fn callable() -> Result<()> {
             };
             format!("{}", current)
         })?;
-        feeder(py, f)?;
 
-        let g = as_pycfunc(py, |(a, b): (i64, f64)| a as f64 * b)?;
-        caller(py, g)?;
+        caller(py, |(a, b): (i64, f64)| a as f64 * b)?;
 
         Ok(())
     })
