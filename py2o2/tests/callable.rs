@@ -52,6 +52,34 @@ fn inspect() -> Result<()> {
                     "kind": "none"
                 }
             },
+            "caller": {
+                "name": "caller",
+                "parameters": [
+                    {
+                        "name": "f",
+                        "type": {
+                            "kind": "callable",
+                            "args": [
+                                {
+                                    "kind": "primitive",
+                                    "name": "int"
+                                },
+                                {
+                                    "kind": "primitive",
+                                    "name": "float"
+                                }
+                            ],
+                            "return": {
+                                "kind": "primitive",
+                                "name": "float"
+                            }
+                        }
+                    }
+                ],
+                "return": {
+                    "kind": "none"
+                }
+            },
             "ellipsis_callable": {
                 "name": "ellipsis_callable",
                 "parameters": [
@@ -131,6 +159,28 @@ fn inspect() -> Result<()> {
                 ],
                 return: None,
             },
+            "caller": Function {
+                name: "caller",
+                parameters: [
+                    Parameter {
+                        name: "f",
+                        type: Callable {
+                            args: [
+                                Primitive(
+                                    Int,
+                                ),
+                                Primitive(
+                                    Float,
+                                ),
+                            ],
+                            return: Primitive(
+                                Float,
+                            ),
+                        },
+                    },
+                ],
+                return: None,
+            },
             "ellipsis_callable": Function {
                 name: "ellipsis_callable",
                 parameters: [
@@ -185,6 +235,10 @@ fn codegen() -> Result<()> {
             .call((on_success, on_error), None)?;
         Ok(())
     }
+    pub fn caller<'py>(py: ::pyo3::Python<'py>, f: impl Fn()) -> ::pyo3::PyResult<()> {
+        let _ = py.import("callable")?.getattr("caller")?.call((f,), None)?;
+        Ok(())
+    }
     pub fn ellipsis_callable<'py>(
         py: ::pyo3::Python<'py>,
         f: impl Fn(),
@@ -212,6 +266,10 @@ fn codegen() -> Result<()> {
                 .import("callable")?
                 .getattr("async_query")?
                 .call((on_success, on_error), None)?;
+            Ok(())
+        }
+        pub fn caller<'py>(py: ::pyo3::Python<'py>, f: impl Fn()) -> ::pyo3::PyResult<()> {
+            let _ = py.import("callable")?.getattr("caller")?.call((f,), None)?;
             Ok(())
         }
         pub fn ellipsis_callable<'py>(
