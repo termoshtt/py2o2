@@ -39,7 +39,7 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
             syn::parse_quote!(impl #ident)
         }
         Type::Callable { args, r#return } => {
-            let args: Vec<_> = args.iter().map(|ty| as_input_type(ty)).collect();
+            let args: Vec<_> = args.iter().map(as_input_type).collect();
             let out = as_output_type(r#return);
             syn::parse_quote!(impl Fn(#(#args),*) -> #out)
         }
@@ -69,7 +69,7 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
             syn::parse_quote!( ::py2o2_runtime::#enum_ <#(#out),*>)
         }
         Type::Callable { args, r#return } => {
-            let args: Vec<_> = args.iter().map(|ty| as_input_type(ty)).collect();
+            let args: Vec<_> = args.iter().map(as_input_type).collect();
             let out = as_output_type(r#return);
             syn::parse_quote!(Box<Fn(#(#args),*) -> #out>)
         }

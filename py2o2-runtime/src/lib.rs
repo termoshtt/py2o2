@@ -50,7 +50,7 @@ macro_rules! define_enum {
 define_enum!(Enum2; Item1, Item2; T1, T2);
 define_enum!(Enum3; Item1, Item2, Item3; T1, T2, T3);
 
-pub fn as_pycfunc<'py, F, Input, Output>(py: Python<'py>, f: F) -> PyResult<&'py PyCFunction>
+pub fn as_pycfunc<F, Input, Output>(py: Python<'_>, f: F) -> PyResult<&PyCFunction>
 where
     F: Fn(Input) -> Output + Send + 'static,
     for<'a> Input: FromPyObject<'a>,
