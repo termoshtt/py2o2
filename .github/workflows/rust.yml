@@ -39,7 +39,7 @@ jobs:
       with:
         command: xtask
     - name: Check changes
-      run: git diff --check
+      run: git diff --exit-code
 
   check-format:
     runs-on: ubuntu-22.04

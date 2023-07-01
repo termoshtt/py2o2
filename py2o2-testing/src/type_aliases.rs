@@ -19,7 +19,7 @@ pub fn broadcast_message<'py>(
 pub fn get_user_name<'py>(
     py: ::pyo3::Python<'py>,
     user_id: UserId,
-) -> ::pyo3::PyResult<&'py ::pyo3::types::PyString> {
+) -> ::pyo3::PyResult<::pyo3::Py<::pyo3::types::PyString>> {
     let result = py
         .import("type_aliases")?
         .getattr("get_user_name")?
@@ -30,7 +30,7 @@ pub fn scale<'py>(
     py: ::pyo3::Python<'py>,
     scalar: f64,
     vector: &::pyo3::types::PyList,
-) -> ::pyo3::PyResult<&'py ::pyo3::types::PyList> {
+) -> ::pyo3::PyResult<::pyo3::Py<::pyo3::types::PyList>> {
     let result = py
         .import("type_aliases")?
         .getattr("scale")?

@@ -39,7 +39,7 @@ fn type_aliases() -> Result<()> {
 
         let id = type_aliases::UserId(124);
         let out = type_aliases::get_user_name(py, id)?;
-        assert_eq!(out.to_str()?, "ID = 124");
+        assert_eq!(out.as_ref(py).to_str()?, "ID = 124");
 
         Ok(())
     })

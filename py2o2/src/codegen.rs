@@ -45,14 +45,14 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
     match ty {
         Type::Primitive(Primitive::Int) => syn::parse_quote!(i64),
         Type::Primitive(Primitive::Float) => syn::parse_quote!(f64),
-        Type::Primitive(Primitive::Str) => syn::parse_quote!(&'py ::pyo3::types::PyString),
+        Type::Primitive(Primitive::Str) => syn::parse_quote!(::pyo3::Py<::pyo3::types::PyString>),
         Type::None => syn::parse_quote!(()),
         Type::Tuple { tags } => {
             let tags: Vec<syn::Type> = tags.iter().map(as_output_type).collect();
             syn::parse_quote! { (#(#tags),*) }
         }
-        Type::List { .. } => syn::parse_quote! { &'py ::pyo3::types::PyList },
-        Type::Dict { .. } => syn::parse_quote! { &'py ::pyo3::types::PyDict },
+        Type::List { .. } => syn::parse_quote!(::pyo3::Py<::pyo3::types::PyList>),
+        Type::Dict { .. } => syn::parse_quote!(::pyo3::Py<::pyo3::types::PyDict>),
         Type::UserDefined { name, .. } => {
             let ty = syn::Ident::new(name, Span::call_site());
             syn::parse_quote!(#ty)
