@@ -69,30 +69,20 @@ fn caller<'py>(py: Python<'py>, f: &'py PyCFunction) -> PyResult<()> {
     Ok(())
 }
 
-fn as_pycfunc0<'py, F>(py: Python<'py>, f: F) -> PyResult<&'py PyCFunction>
+fn as_pycfunc<'py, F, Input, Output>(py: Python<'py>, f: F) -> PyResult<&'py PyCFunction>
 where
-    F: Fn() -> Py<PyString> + Send + 'static,
+    F: Fn(Input) -> Output + Send + 'static,
+    for<'a> Input: FromPyObject<'a>,
+    Output: IntoPy<Py<PyAny>>,
 {
     PyCFunction::new_closure(
         py,
         None,
         None,
-        move |_args: &PyTuple, _kwargs: Option<&PyDict>| -> PyResult<_> { Ok(f()) },
-    )
-}
-
-fn as_pycfunc1<'py, F>(py: Python<'py>, f: F) -> PyResult<&'py PyCFunction>
-where
-    F: Fn(i64, f64) -> f64 + Send + 'static,
-{
-    PyCFunction::new_closure(
-        py,
-        None,
-        None,
-        move |args: &PyTuple, _kwargs: Option<&PyDict>| -> PyResult<_> {
-            let (a, b): (i64, f64) = args.extract()?;
-            let out = f(a, b);
-            Ok(out)
+        move |args: &PyTuple, _kwargs: Option<&PyDict>| -> PyResult<Py<PyAny>> {
+            let input: Input = args.extract()?;
+            let out = f(input);
+            Python::with_gil(|py2| Ok(out.into_py(py2)))
         },
     )
 }
@@ -101,17 +91,17 @@ where
 fn callable() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
     Python::with_gil(|py| {
-        let f = as_pycfunc0(py, || {
+        let f = as_pycfunc(py, |_input: [usize; 0]| -> String {
             static mut COUNT: usize = 0;
             let current = unsafe {
                 COUNT += 1;
                 COUNT
             };
-            Python::with_gil(|py2| PyString::new(py2, &format!("{}", current)).into())
+            format!("{}", current)
         })?;
         feeder(py, f)?;
 
-        let g = as_pycfunc1(py, |a: i64, b: f64| a as f64 * b)?;
+        let g = as_pycfunc(py, |(a, b): (i64, f64)| a as f64 * b)?;
         caller(py, g)?;
 
         Ok(())
