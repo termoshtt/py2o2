@@ -17,6 +17,10 @@ def type_as_tag(ty: type) -> dict:
         return {"kind": "primitive", "name": "str"}
     if ty == float:
         return {"kind": "primitive", "name": "float"}
+    if ty == Exception:
+        return {"kind": "exception"}
+    if ty == Ellipsis:
+        return {"kind": "ellipsis"}
     if type(ty) == types.GenericAlias:
         if ty.__origin__ in [list, collections.abc.Sequence]:
             return {"kind": "list", "inner": [type_as_tag(t) for t in ty.__args__]}
@@ -35,6 +39,12 @@ def type_as_tag(ty: type) -> dict:
         }
     if type(ty) in [types.UnionType, typing._UnionGenericAlias]:
         return {"kind": "union", "args": [type_as_tag(t) for t in ty.__args__]}
+    if type(ty) == collections.abc._CallableGenericAlias:
+        return {
+            "kind": "callable",
+            "args": [type_as_tag(t) for t in ty.__args__[:-1]],
+            "return": type_as_tag(ty.__args__[-1]),
+        }
     raise NotImplementedError(f"Unsupported type = {ty}, {type(ty)}")
 
 

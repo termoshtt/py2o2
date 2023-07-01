@@ -50,6 +50,24 @@ macro_rules! define_enum {
 define_enum!(Enum2; Item1, Item2; T1, T2);
 define_enum!(Enum3; Item1, Item2, Item3; T1, T2, T3);
 
+pub fn as_pycfunc<F, Input, Output>(py: Python<'_>, f: F) -> PyResult<&PyCFunction>
+where
+    F: Fn(Input) -> Output + Send + 'static,
+    for<'a> Input: FromPyObject<'a>,
+    Output: IntoPy<Py<PyAny>>,
+{
+    PyCFunction::new_closure(
+        py,
+        None,
+        None,
+        move |args: &PyTuple, _kwargs: Option<&PyDict>| -> PyResult<Py<PyAny>> {
+            let input: Input = args.extract()?;
+            let out = f(input);
+            Python::with_gil(|py2| Ok(out.into_py(py2)))
+        },
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

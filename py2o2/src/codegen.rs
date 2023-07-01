@@ -23,7 +23,7 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
         Type::Primitive(Primitive::Int) => syn::parse_quote!(i64),
         Type::Primitive(Primitive::Float) => syn::parse_quote!(f64),
         Type::Primitive(Primitive::Str) => syn::parse_quote!(&str),
-        Type::None => syn::parse_quote!(()),
+        Type::None | Type::Ellipsis | Type::Exception => syn::parse_quote!(()),
         Type::Tuple { tags } => {
             let tags: Vec<syn::Type> = tags.iter().map(as_input_type).collect();
             syn::parse_quote! { (#(#tags),*) }
@@ -38,6 +38,11 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
             let ident = union_trait_ident(args);
             syn::parse_quote!(impl #ident)
         }
+        Type::Callable { args, r#return } => {
+            let args: Vec<_> = args.iter().map(as_input_type).collect();
+            let out = as_output_type(r#return);
+            syn::parse_quote!(impl Fn(#(#args),*) -> #out)
+        }
     }
 }
 
@@ -46,7 +51,7 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
         Type::Primitive(Primitive::Int) => syn::parse_quote!(i64),
         Type::Primitive(Primitive::Float) => syn::parse_quote!(f64),
         Type::Primitive(Primitive::Str) => syn::parse_quote!(::pyo3::Py<::pyo3::types::PyString>),
-        Type::None => syn::parse_quote!(()),
+        Type::None | Type::Ellipsis | Type::Exception => syn::parse_quote!(()),
         Type::Tuple { tags } => {
             let tags: Vec<syn::Type> = tags.iter().map(as_output_type).collect();
             syn::parse_quote! { (#(#tags),*) }
@@ -62,6 +67,11 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
             let enum_ = quote::format_ident!("Enum{}", n);
             let out: Vec<_> = args.iter().map(as_output_type).collect();
             syn::parse_quote!( ::py2o2_runtime::#enum_ <#(#out),*>)
+        }
+        Type::Callable { args, r#return } => {
+            let args: Vec<_> = args.iter().map(as_input_type).collect();
+            let out = as_output_type(r#return);
+            syn::parse_quote!(Box<Fn(#(#args),*) -> #out>)
         }
     }
 }
