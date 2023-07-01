@@ -5,7 +5,7 @@ use pyo3::{
     exceptions::PyTypeError,
     type_object::PyTypeInfo,
     types::{PyFloat, PyLong, PyString},
-    PyAny, PyResult,
+    Py, PyAny, PyResult,
 };
 
 pub trait AsPyType {
@@ -25,6 +25,12 @@ impl_as_py_type!(i64, PyLong);
 impl_as_py_type!(f64, PyFloat);
 impl_as_py_type!(&PyString, PyString);
 
+impl<T: PyTypeInfo> AsPyType for Py<T> {
+    fn is_type_of(obj: &PyAny) -> bool {
+        T::is_type_of(obj)
+    }
+}
+
 macro_rules! define_enum {
     ($enum:ident; $($item:ident),* ; $($t:ident),*) => {
         #[derive(Debug, PartialEq, Clone)]
@@ -39,7 +45,8 @@ macro_rules! define_enum {
             fn extract(ob: &'s PyAny) -> PyResult<Self> {
                 $(
                 if $t::is_type_of(ob) {
-                    return Ok($enum::$item(ob.extract()?));
+                    let inner: $t = ob.extract()?;
+                    return Ok($enum::$item(inner.into()));
                 }
                 )*
                 Err(PyTypeError::new_err("Type mismatch"))
