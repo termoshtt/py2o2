@@ -4,6 +4,7 @@ use anyhow::Result;
 use py2o2_runtime::Enum2;
 use pyo3::{prelude::*, types::*, Python};
 
+pub mod callable;
 pub mod example;
 pub mod type_aliases;
 pub mod union;
@@ -59,32 +60,20 @@ fn union() -> Result<()> {
     })
 }
 
-fn feeder<'py>(py: Python<'py>, f: impl Fn() -> String + Send + 'static) -> PyResult<()> {
-    let f = py2o2_runtime::as_pycfunc(py, move |_input: [usize; 0]| f())?;
-    py.import("callable")?.getattr("feeder")?.call((f,), None)?;
-    Ok(())
-}
-
-fn caller<'py>(py: Python<'py>, f: impl Fn((i64, f64)) -> f64 + Send + 'static) -> PyResult<()> {
-    let f = py2o2_runtime::as_pycfunc(py, f)?;
-    py.import("callable")?.getattr("caller")?.call((f,), None)?;
-    Ok(())
-}
-
 #[test]
 fn callable() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
     Python::with_gil(|py| {
-        feeder(py, || {
+        callable::feeder(py, move || {
             static mut COUNT: usize = 0;
             let current = unsafe {
                 COUNT += 1;
                 COUNT
             };
-            format!("{}", current)
+            Python::with_gil(|py2| PyString::new(py2, &format!("{}", current)).into())
         })?;
 
-        caller(py, |(a, b): (i64, f64)| a as f64 * b)?;
+        callable::caller(py, |(a, b): (i64, f64)| a as f64 * b)?;
 
         Ok(())
     })
