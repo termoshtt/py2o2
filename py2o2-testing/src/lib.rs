@@ -64,18 +64,16 @@ fn union() -> Result<()> {
 fn callable() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
     Python::with_gil(|py| {
-        let f = py2o2_runtime::as_pycfunc(py, move |_input: [usize; 0]| {
+        callable::feeder(py, move || {
             static mut COUNT: usize = 0;
             let current = unsafe {
                 COUNT += 1;
                 COUNT
             };
-            format!("{}", current)
+            Python::with_gil(|py2| PyString::new(py2, &format!("{}", current)).into())
         })?;
-        callable::feeder(py, f)?;
 
-        let g = py2o2_runtime::as_pycfunc(py, |(a, b): (i64, f64)| a as f64 * b)?;
-        callable::caller(py, g)?;
+        callable::caller(py, |(a, b): (i64, f64)| a as f64 * b)?;
 
         Ok(())
     })

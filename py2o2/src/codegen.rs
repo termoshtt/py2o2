@@ -18,12 +18,24 @@ fn union_trait_ident(args: &[Type]) -> syn::Ident {
     quote::format_ident!("Union{:x}", hash)
 }
 
+fn callable_trait(args: &[Type], ret: &Type) -> TokenStream2 {
+    let args = if args.is_empty() {
+        quote! {}
+    } else {
+        let args: Vec<_> = args.iter().map(as_input_type).collect();
+        quote! {(#(#args,)*)}
+    };
+    let out = as_output_type(ret);
+    quote!(Fn(#args) -> #out + Send + 'static)
+}
+
 pub fn as_input_type(ty: &Type) -> syn::Type {
     match ty {
         Type::Primitive(Primitive::Int) => syn::parse_quote!(i64),
         Type::Primitive(Primitive::Float) => syn::parse_quote!(f64),
         Type::Primitive(Primitive::Str) => syn::parse_quote!(&str),
-        Type::None | Type::Ellipsis | Type::Exception => syn::parse_quote!(()),
+        Type::None => syn::parse_quote!(()),
+        Type::Ellipsis | Type::Exception => syn::parse_quote!(::pyo3::Py<::pyo3::PyAny>),
         Type::Tuple { tags } => {
             let tags: Vec<syn::Type> = tags.iter().map(as_input_type).collect();
             syn::parse_quote! { (#(#tags),*) }
@@ -38,8 +50,9 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
             let ident = union_trait_ident(args);
             syn::parse_quote!(impl #ident)
         }
-        Type::Callable { .. } => {
-            syn::parse_quote!(&::pyo3::types::PyCFunction)
+        Type::Callable { args, r#return } => {
+            let t = callable_trait(args, r#return);
+            syn::parse_quote!(impl #t)
         }
     }
 }
@@ -49,7 +62,8 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
         Type::Primitive(Primitive::Int) => syn::parse_quote!(i64),
         Type::Primitive(Primitive::Float) => syn::parse_quote!(f64),
         Type::Primitive(Primitive::Str) => syn::parse_quote!(::pyo3::Py<::pyo3::types::PyString>),
-        Type::None | Type::Ellipsis | Type::Exception => syn::parse_quote!(()),
+        Type::None => syn::parse_quote!(()),
+        Type::Ellipsis | Type::Exception => syn::parse_quote!(::pyo3::Py<::pyo3::PyAny>),
         Type::Tuple { tags } => {
             let tags: Vec<syn::Type> = tags.iter().map(as_output_type).collect();
             syn::parse_quote! { (#(#tags),*) }
@@ -66,8 +80,9 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
             let out: Vec<_> = args.iter().map(as_output_type).collect();
             syn::parse_quote!( ::py2o2_runtime::#enum_ <#(#out),*>)
         }
-        Type::Callable { .. } => {
-            syn::parse_quote!(::pyo3::Py<::pyo3::types::PyCFunction>)
+        Type::Callable { args, r#return } => {
+            let t = callable_trait(args, r#return);
+            syn::parse_quote!(Box<#t>)
         }
     }
 }
@@ -103,9 +118,29 @@ pub fn generate_function(module_name: &str, f: &Function) -> Result<TokenStream2
             Ok(result.extract()?)
         }
     };
+    let convert_callable: Vec<TokenStream2> = f
+        .parameters
+        .iter()
+        .flat_map(|p| match &p.r#type {
+            Type::Callable { args, .. } => {
+                let ident = syn::Ident::new(&p.name, Span::call_site());
+                Some(if args.is_empty() {
+                    quote! {
+                        let #ident = ::py2o2_runtime::as_pycfunc(py, move |_input: [usize; 0]| #ident())?;
+                    }
+                } else {
+                    quote! {
+                        let #ident = ::py2o2_runtime::as_pycfunc(py, #ident)?;
+                    }
+                })
+            }
+            _ => None,
+        })
+        .collect();
 
     Ok(quote! {
         pub fn #ident<'py>(py: ::pyo3::Python<'py>, #input_tt) -> ::pyo3::PyResult<#output> {
+            #(#convert_callable)*
             #inner_tt
         }
     })
