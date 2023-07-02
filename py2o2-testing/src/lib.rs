@@ -60,23 +60,11 @@ fn union() -> Result<()> {
     })
 }
 
-fn feeder<'py>(py: Python<'py>, f: impl Fn() -> String + Send + 'static) -> PyResult<()> {
-    let f = py2o2_runtime::as_pycfunc(py, move |_input: [usize; 0]| f())?;
-    py.import("callable")?.getattr("feeder")?.call((f,), None)?;
-    Ok(())
-}
-
-fn caller<'py>(py: Python<'py>, f: impl Fn((i64, f64)) -> f64 + Send + 'static) -> PyResult<()> {
-    let f = py2o2_runtime::as_pycfunc(py, f)?;
-    py.import("callable")?.getattr("caller")?.call((f,), None)?;
-    Ok(())
-}
-
 #[test]
 fn callable() -> Result<()> {
     std::env::set_var("PYTHONPATH", PYTHON_ROOT);
     Python::with_gil(|py| {
-        feeder(py, || {
+        let f = py2o2_runtime::as_pycfunc(py, move |_input: [usize; 0]| {
             static mut COUNT: usize = 0;
             let current = unsafe {
                 COUNT += 1;
@@ -84,8 +72,10 @@ fn callable() -> Result<()> {
             };
             format!("{}", current)
         })?;
+        callable::feeder(py, f)?;
 
-        caller(py, |(a, b): (i64, f64)| a as f64 * b)?;
+        let g = py2o2_runtime::as_pycfunc(py, |(a, b): (i64, f64)| a as f64 * b)?;
+        callable::caller(py, g)?;
 
         Ok(())
     })
