@@ -4,6 +4,7 @@ use anyhow::Result;
 use py2o2_runtime::Enum2;
 use pyo3::{prelude::*, types::*, Python};
 
+pub mod callable;
 pub mod example;
 pub mod type_aliases;
 pub mod union;
