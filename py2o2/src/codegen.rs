@@ -38,10 +38,8 @@ pub fn as_input_type(ty: &Type) -> syn::Type {
             let ident = union_trait_ident(args);
             syn::parse_quote!(impl #ident)
         }
-        Type::Callable { args, r#return } => {
-            let args: Vec<_> = args.iter().map(as_input_type).collect();
-            let out = as_output_type(r#return);
-            syn::parse_quote!(impl Fn(#(#args),*) -> #out)
+        Type::Callable { .. } => {
+            syn::parse_quote!(&::pyo3::types::PyCFunction)
         }
     }
 }
@@ -68,10 +66,8 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
             let out: Vec<_> = args.iter().map(as_output_type).collect();
             syn::parse_quote!( ::py2o2_runtime::#enum_ <#(#out),*>)
         }
-        Type::Callable { args, r#return } => {
-            let args: Vec<_> = args.iter().map(as_input_type).collect();
-            let out = as_output_type(r#return);
-            syn::parse_quote!(Box<Fn(#(#args),*) -> #out>)
+        Type::Callable { .. } => {
+            syn::parse_quote!(::pyo3::Py<::pyo3::types::PyCFunction>)
         }
     }
 }

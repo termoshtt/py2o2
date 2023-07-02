@@ -226,8 +226,8 @@ fn codegen() -> Result<()> {
     insta::assert_snapshot!(generate(TARGET, &interface, true)?, @r###"
     pub fn async_query<'py>(
         py: ::pyo3::Python<'py>,
-        on_success: impl Fn(i64) -> (),
-        on_error: impl Fn(i64, ()) -> (),
+        on_success: &::pyo3::types::PyCFunction,
+        on_error: &::pyo3::types::PyCFunction,
     ) -> ::pyo3::PyResult<()> {
         let _ = py
             .import("callable")?
@@ -237,21 +237,21 @@ fn codegen() -> Result<()> {
     }
     pub fn caller<'py>(
         py: ::pyo3::Python<'py>,
-        f: impl Fn(i64, f64) -> f64,
+        f: &::pyo3::types::PyCFunction,
     ) -> ::pyo3::PyResult<()> {
         let _ = py.import("callable")?.getattr("caller")?.call((f,), None)?;
         Ok(())
     }
     pub fn ellipsis_callable<'py>(
         py: ::pyo3::Python<'py>,
-        f: impl Fn(()) -> (),
+        f: &::pyo3::types::PyCFunction,
     ) -> ::pyo3::PyResult<()> {
         let _ = py.import("callable")?.getattr("ellipsis_callable")?.call((f,), None)?;
         Ok(())
     }
     pub fn feeder<'py>(
         py: ::pyo3::Python<'py>,
-        get_next_item: impl Fn() -> ::pyo3::Py<::pyo3::types::PyString>,
+        get_next_item: &::pyo3::types::PyCFunction,
     ) -> ::pyo3::PyResult<()> {
         let _ = py.import("callable")?.getattr("feeder")?.call((get_next_item,), None)?;
         Ok(())
@@ -262,8 +262,8 @@ fn codegen() -> Result<()> {
     pub mod callable {
         pub fn async_query<'py>(
             py: ::pyo3::Python<'py>,
-            on_success: impl Fn(i64) -> (),
-            on_error: impl Fn(i64, ()) -> (),
+            on_success: &::pyo3::types::PyCFunction,
+            on_error: &::pyo3::types::PyCFunction,
         ) -> ::pyo3::PyResult<()> {
             let _ = py
                 .import("callable")?
@@ -273,21 +273,21 @@ fn codegen() -> Result<()> {
         }
         pub fn caller<'py>(
             py: ::pyo3::Python<'py>,
-            f: impl Fn(i64, f64) -> f64,
+            f: &::pyo3::types::PyCFunction,
         ) -> ::pyo3::PyResult<()> {
             let _ = py.import("callable")?.getattr("caller")?.call((f,), None)?;
             Ok(())
         }
         pub fn ellipsis_callable<'py>(
             py: ::pyo3::Python<'py>,
-            f: impl Fn(()) -> (),
+            f: &::pyo3::types::PyCFunction,
         ) -> ::pyo3::PyResult<()> {
             let _ = py.import("callable")?.getattr("ellipsis_callable")?.call((f,), None)?;
             Ok(())
         }
         pub fn feeder<'py>(
             py: ::pyo3::Python<'py>,
-            get_next_item: impl Fn() -> ::pyo3::Py<::pyo3::types::PyString>,
+            get_next_item: &::pyo3::types::PyCFunction,
         ) -> ::pyo3::PyResult<()> {
             let _ = py.import("callable")?.getattr("feeder")?.call((get_next_item,), None)?;
             Ok(())
