@@ -53,7 +53,11 @@ def inspect_module(target: str) -> str:
     interface = {"functions": {}, "type_definitions": {}}
     for name, attr in inspect.getmembers(module):
         if inspect.isfunction(attr):
-            sig = inspect.signature(getattr(module, name))
+            try:
+                sig = inspect.signature(getattr(module, name), eval_str=True)
+            except Exception as e:
+                print(f"Cannot get signature, skip {name}: {e}", file=sys.stderr)
+                continue
             interface["functions"][name] = {
                 "name": name,
                 "parameters": [
