@@ -9,7 +9,7 @@ import typing
 
 
 def type_as_tag(ty: type) -> dict:
-    if ty is None or ty == inspect._empty:
+    if ty is None or ty == inspect._empty or ty is type(None):
         return {"kind": "none"}
     if ty == int:
         return {"kind": "primitive", "name": "int"}
@@ -17,6 +17,8 @@ def type_as_tag(ty: type) -> dict:
         return {"kind": "primitive", "name": "str"}
     if ty == float:
         return {"kind": "primitive", "name": "float"}
+    if ty == bool:
+        return {"kind": "primitive", "name": "bool"}
     if ty == Exception:
         return {"kind": "exception"}
     if ty == Ellipsis:
@@ -37,6 +39,8 @@ def type_as_tag(ty: type) -> dict:
             "name": ty.__name__,
             "supertype": type_as_tag(ty.__supertype__),
         }
+    if type(ty) == typing.ForwardRef:
+        return {"kind": "forward_ref", "name": ty.__forward_arg__}
     if type(ty) in [types.UnionType, typing._UnionGenericAlias]:
         return {"kind": "union", "args": [type_as_tag(t) for t in ty.__args__]}
     if type(ty) == collections.abc._CallableGenericAlias:
@@ -45,6 +49,10 @@ def type_as_tag(ty: type) -> dict:
             "args": [type_as_tag(t) for t in ty.__args__[:-1]],
             "return": type_as_tag(ty.__args__[-1]),
         }
+    if ty == typing.Hashable:
+        return {"kind": "hashable"}
+    if type(ty) == typing._LiteralGenericAlias:
+        return {"kind": "literal", "args": ty.__args__}
     raise NotImplementedError(f"Unsupported type = {ty}, {type(ty)}")
 
 
