@@ -17,3 +17,9 @@ Cargo.lock
 *.pdb
 
 __pycache__/
+
+# inspected
+*.json
+
+# pyright output
+typings/
