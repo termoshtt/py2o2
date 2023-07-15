@@ -3,8 +3,61 @@
 //! The grammar of stub file is same as Python itself, descripted at
 //! https://docs.python.org/3/library/ast.html#abstract-grammar
 
+use anyhow::{bail, Context, Result};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
+
 pub struct Stub {}
 
-pub fn parse(pyi_input: &str) -> anyhow::Result<Stub> {
-    todo!()
+pub fn parse(pyi_input: &str) -> Result<Stub> {
+    todo!("{}", pyi_input)
+}
+
+pub fn generate_pyi(target: &str, root: &Path) -> Result<PathBuf> {
+    let dest = root.join("typings").join(target);
+    if dest.exists() {
+        return Ok(dest);
+    }
+
+    let out = Command::new("pyright")
+        .arg("--createstub")
+        .arg(target)
+        .current_dir(root)
+        .output()
+        .with_context(|| "pyright is not found")?;
+    if out.status.success() {
+        if dest.exists() {
+            return Ok(dest);
+        } else {
+            bail!(
+                "pyright does not creates {}. Something wrong.",
+                dest.display()
+            );
+        }
+    } else {
+        bail!(
+            "pyright exit with error: {}",
+            std::str::from_utf8(&out.stderr).unwrap_or("Non UTF-8 error message")
+        );
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs;
+
+    fn repo_root() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+    }
+
+    #[test]
+    fn parse_numpy_init() -> anyhow::Result<()> {
+        let numpy_typing = generate_pyi("numpy", &repo_root())?;
+        let pyi = fs::read_to_string(numpy_typing.join("__init__.pyi"))?;
+        let _stub = parse(&pyi)?;
+        Ok(())
+    }
 }

@@ -17,3 +17,6 @@ Cargo.lock
 *.pdb
 
 __pycache__/
+
+# pyright output
+typings/
