@@ -4,12 +4,24 @@
 //! https://docs.python.org/3/library/ast.html#abstract-grammar
 
 use anyhow::{bail, Context, Result};
+use nom::{bytes::complete::tag, character::complete::*, multi::many0, Parser};
 use std::{
     path::{Path, PathBuf},
     process::Command,
 };
 
 pub struct Stub {}
+
+type ParseResult<'input, T> = nom::IResult<&'input str, T>;
+
+fn ident(input0: &str) -> ParseResult<&str> {
+    let alpha_1 = satisfy(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '_'));
+    let alphanum_1 = satisfy(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_'));
+    let (input, head) = alpha_1(input0)?;
+    let (input, tail) = many0(alphanum_1).parse(input)?;
+    let n = tail.len() + 1;
+    Ok((&input0[n..], &input0[..n]))
+}
 
 pub fn parse(pyi_input: &str) -> Result<Stub> {
     todo!("{}", pyi_input)
@@ -47,7 +59,17 @@ pub fn generate_pyi(target: &str, root: &Path) -> Result<PathBuf> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use nom::Finish;
     use std::fs;
+
+    #[test]
+    fn parse_ident() {
+        assert_eq!(ident("abc").finish().unwrap(), ("", "abc"));
+        assert_eq!(ident("abc0").finish().unwrap(), ("", "abc0"));
+        assert_eq!(ident("abc def").finish().unwrap(), (" def", "abc"));
+
+        assert!(ident("0abc").finish().is_err());
+    }
 
     fn repo_root() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
