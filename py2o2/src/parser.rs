@@ -4,7 +4,15 @@
 //! https://docs.python.org/3/library/ast.html#abstract-grammar
 
 use anyhow::{bail, Context, Result};
-use nom::{bytes::complete::tag, character::complete::*, multi::many0, Parser};
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::*,
+    combinator::opt,
+    multi::many0,
+    sequence::{delimited, tuple},
+    Parser,
+};
 use std::{
     path::{Path, PathBuf},
     process::Command,
@@ -21,6 +29,40 @@ fn ident(input0: &str) -> ParseResult<&str> {
     let (input, tail) = many0(alphanum_1).parse(input)?;
     let n = tail.len() + 1;
     Ok((&input0[n..], &input0[..n]))
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum Expr {
+    None,
+    Ellipsis,
+    Pass,
+}
+
+fn expr(input: &str) -> ParseResult<Expr> {
+    alt((
+        tag("None").map(|_| Expr::None),
+        tag("...").map(|_| Expr::Ellipsis),
+        tag("pass").map(|_| Expr::Pass),
+    ))
+    .parse(input)
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct Arg<'input> {
+    name: &'input str,
+    ty: Option<&'input str>,
+    default: Option<Expr>,
+}
+
+fn arg(input: &str) -> ParseResult<Arg> {
+    let (input, (name, ty, default)) = tuple((
+        ident,
+        opt(tuple((multispace0, char(':'), multispace0, ident)).map(|(_sp1, _colon, _sp2, ty)| ty)),
+        opt(tuple((multispace0, char('='), multispace0, expr))
+            .map(|(_sp1, _colon, _sp2, default)| default)),
+    ))
+    .parse(input)?;
+    Ok((input, Arg { name, ty, default }))
 }
 
 pub fn parse(pyi_input: &str) -> Result<Stub> {
@@ -69,6 +111,54 @@ mod test {
         assert_eq!(ident("abc def").finish().unwrap(), (" def", "abc"));
 
         assert!(ident("0abc").finish().is_err());
+    }
+
+    #[test]
+    fn parse_arg() {
+        assert_eq!(
+            arg("a").finish().unwrap(),
+            (
+                "",
+                Arg {
+                    name: "a",
+                    ty: None,
+                    default: None
+                }
+            )
+        );
+        assert_eq!(
+            arg("a: T").finish().unwrap(),
+            (
+                "",
+                Arg {
+                    name: "a",
+                    ty: Some("T"),
+                    default: None
+                }
+            )
+        );
+        assert_eq!(
+            arg("a: T = None").finish().unwrap(),
+            (
+                "",
+                Arg {
+                    name: "a",
+                    ty: Some("T"),
+                    default: Some(Expr::None)
+                }
+            )
+        );
+        assert_eq!(
+            arg("a = None").finish().unwrap(),
+            (
+                "",
+                Arg {
+                    name: "a",
+                    ty: None,
+                    default: Some(Expr::None)
+                }
+            )
+        );
     }
 
     fn repo_root() -> PathBuf {
