@@ -9,7 +9,7 @@ use nom::{
     bytes::complete::tag,
     character::complete::*,
     combinator::opt,
-    multi::{many0, separated_list0},
+    multi::{many0, separated_list0, separated_list1},
     sequence::{delimited, tuple},
     Parser,
 };
@@ -111,9 +111,44 @@ pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Stub {}
+pub struct Import<'input> {
+    names: Vec<&'input str>,
+}
 
-pub fn parse(pyi_input: &str) -> Result<Stub> {
+pub fn import(input: &str) -> ParseResult<Import> {
+    let (input, _import) = tag("import").parse(input)?;
+    let (input, _sp) = multispace1(input)?;
+    let (input, names) =
+        separated_list1(tuple((multispace0, char(','), multispace0)), ident).parse(input)?;
+    Ok((input, Import { names }))
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ImportFrom<'input> {
+    module: &'input str,
+    names: Vec<&'input str>,
+}
+
+pub fn import_from(input: &str) -> ParseResult<ImportFrom> {
+    let (input, _from) = tag("from").parse(input)?;
+    let (input, _sp) = multispace1(input)?;
+    let (input, module) = ident(input)?;
+    let (input, _sp) = multispace1(input)?;
+    let (input, _import) = tag("import").parse(input)?;
+    let (input, _sp) = multispace1(input)?;
+    let (input, names) =
+        separated_list1(tuple((multispace0, char(','), multispace0)), ident).parse(input)?;
+    Ok((input, ImportFrom { module, names }))
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct AST<'input> {
+    import: Vec<Import<'input>>,
+    import_from: Vec<ImportFrom<'input>>,
+    function_def: Vec<FunctionDef<'input>>,
+}
+
+pub fn parse(pyi_input: &str) -> Result<AST> {
     todo!("{}", pyi_input)
 }
 
@@ -264,6 +299,30 @@ mod test {
                 }
             )
         )
+    }
+
+    #[test]
+    fn parse_import() {
+        assert_eq!(
+            import("import numpy, pandas").finish().unwrap(),
+            (
+                "",
+                Import {
+                    names: vec!["numpy", "pandas"]
+                }
+            )
+        );
+
+        assert_eq!(
+            import_from("from numpy import array").finish().unwrap(),
+            (
+                "",
+                ImportFrom {
+                    module: "numpy",
+                    names: vec!["array"]
+                }
+            )
+        );
     }
 
     fn repo_root() -> PathBuf {
