@@ -9,7 +9,7 @@ use nom::{
     bytes::complete::tag,
     character::complete::*,
     combinator::opt,
-    multi::many0,
+    multi::{many0, separated_list0},
     sequence::{delimited, tuple},
     Parser,
 };
@@ -18,21 +18,21 @@ use std::{
     process::Command,
 };
 
-pub struct Stub {}
-
-type ParseResult<'input, T> = nom::IResult<&'input str, T>;
+pub type ParseResult<'input, T> = nom::IResult<&'input str, T>;
 
 fn ident(input0: &str) -> ParseResult<&str> {
+    // TODO: Support more unicodes
+    // https://docs.python.org/ja/3/reference/lexical_analysis.html#identifiers
     let alpha_1 = satisfy(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '_'));
     let alphanum_1 = satisfy(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_'));
-    let (input, head) = alpha_1(input0)?;
-    let (input, tail) = many0(alphanum_1).parse(input)?;
+    let (input, _head) = alpha_1(input0)?;
+    let (_input, tail) = many0(alphanum_1).parse(input)?;
     let n = tail.len() + 1;
     Ok((&input0[n..], &input0[..n]))
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum Expr {
+pub enum Expr {
     None,
     Ellipsis,
     Pass,
@@ -48,22 +48,70 @@ fn expr(input: &str) -> ParseResult<Expr> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct Arg<'input> {
-    name: &'input str,
-    ty: Option<&'input str>,
-    default: Option<Expr>,
+pub enum Type<'input> {
+    Name(&'input str),
+    None,
 }
 
-fn arg(input: &str) -> ParseResult<Arg> {
+pub fn type_(input: &str) -> ParseResult<Type> {
+    // FIXME: More possible types e.g. `Callable`
+    let (input, name) = ident(input)?;
+    Ok((input, Type::Name(name)))
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Arg<'input> {
+    pub name: &'input str,
+    pub ty: Option<Type<'input>>,
+    pub default: Option<Expr>,
+}
+
+pub fn arg(input: &str) -> ParseResult<Arg> {
     let (input, (name, ty, default)) = tuple((
         ident,
-        opt(tuple((multispace0, char(':'), multispace0, ident)).map(|(_sp1, _colon, _sp2, ty)| ty)),
+        opt(tuple((multispace0, char(':'), multispace0, type_)).map(|(_sp1, _colon, _sp2, ty)| ty)),
         opt(tuple((multispace0, char('='), multispace0, expr))
             .map(|(_sp1, _colon, _sp2, default)| default)),
     ))
     .parse(input)?;
     Ok((input, Arg { name, ty, default }))
 }
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct FunctionDef<'input> {
+    name: &'input str,
+    args: Vec<Arg<'input>>,
+    type_: Type<'input>,
+}
+
+pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
+    let (input, _def) = tag("def").parse(input)?;
+    let (input, _space) = multispace1(input)?;
+    let (input, name) = ident(input)?;
+    let (input, args) = delimited(
+        char('('),
+        separated_list0(tuple((multispace0, char(','), multispace0)), arg),
+        char(')'),
+    )
+    .parse(input)?;
+    let (input, ty) =
+        opt(tuple((multispace0, tag("->"), multispace0, type_)).map(|(_sp1, _arrow, _sp2, ty)| ty))
+            .parse(input)?;
+    let (input, _colon) = char(':').parse(input)?;
+    let (input, _sp) = multispace0(input)?;
+    let (input, _expr) = expr(input)?;
+    Ok((
+        input,
+        FunctionDef {
+            name,
+            args,
+            type_: ty.unwrap_or(Type::None),
+        },
+    ))
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Stub {}
 
 pub fn parse(pyi_input: &str) -> Result<Stub> {
     todo!("{}", pyi_input)
@@ -132,7 +180,7 @@ mod test {
                 "",
                 Arg {
                     name: "a",
-                    ty: Some("T"),
+                    ty: Some(Type::Name("T")),
                     default: None
                 }
             )
@@ -143,7 +191,7 @@ mod test {
                 "",
                 Arg {
                     name: "a",
-                    ty: Some("T"),
+                    ty: Some(Type::Name("T")),
                     default: Some(Expr::None)
                 }
             )
@@ -159,6 +207,63 @@ mod test {
                 }
             )
         );
+    }
+
+    #[test]
+    fn parse_function_def() {
+        assert_eq!(
+            function_def(
+                r#"
+                def f(a, b):
+                    ...
+                "#
+                .trim()
+            )
+            .finish()
+            .unwrap(),
+            (
+                "",
+                FunctionDef {
+                    name: "f",
+                    args: vec![
+                        Arg {
+                            name: "a",
+                            ty: None,
+                            default: None
+                        },
+                        Arg {
+                            name: "b",
+                            ty: None,
+                            default: None
+                        }
+                    ],
+                    type_: Type::None,
+                }
+            )
+        );
+        assert_eq!(
+            function_def(
+                r#"
+                def g(x: int) -> str:
+                    ...
+                "#
+                .trim()
+            )
+            .finish()
+            .unwrap(),
+            (
+                "",
+                FunctionDef {
+                    name: "g",
+                    args: vec![Arg {
+                        name: "x",
+                        ty: Some(Type::Name("int")),
+                        default: None
+                    },],
+                    type_: Type::Name("str"),
+                }
+            )
+        )
     }
 
     fn repo_root() -> PathBuf {
