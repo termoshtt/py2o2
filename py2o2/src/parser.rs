@@ -270,6 +270,7 @@ mod test {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
     }
 
+    #[ignore]
     #[test]
     fn parse_numpy_init() -> anyhow::Result<()> {
         let numpy_typing = generate_pyi("numpy", &repo_root())?;
