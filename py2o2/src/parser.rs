@@ -142,14 +142,30 @@ pub fn import_from(input: &str) -> ParseResult<ImportFrom> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub enum Statement<'input> {
+    Import(Import<'input>),
+    ImportFrom(ImportFrom<'input>),
+    FunctionDef(FunctionDef<'input>),
+}
+
+pub fn statement(input: &str) -> ParseResult<Statement> {
+    alt((
+        import.map(Statement::Import),
+        import_from.map(Statement::ImportFrom),
+        function_def.map(Statement::FunctionDef),
+    ))
+    .parse(input)
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct AST<'input> {
     import: Vec<Import<'input>>,
     import_from: Vec<ImportFrom<'input>>,
     function_def: Vec<FunctionDef<'input>>,
 }
 
-pub fn parse(pyi_input: &str) -> Result<AST> {
-    todo!("{}", pyi_input)
+pub fn parse(input: &str) -> ParseResult<Vec<Statement>> {
+    separated_list0(multispace1, statement).parse(input)
 }
 
 pub fn generate_pyi(target: &str, root: &Path) -> Result<PathBuf> {
@@ -331,10 +347,15 @@ mod test {
 
     #[ignore]
     #[test]
-    fn parse_numpy_init() -> anyhow::Result<()> {
-        let numpy_typing = generate_pyi("numpy", &repo_root())?;
-        let pyi = fs::read_to_string(numpy_typing.join("__init__.pyi"))?;
-        let _stub = parse(&pyi)?;
-        Ok(())
+    fn parse_numpy_init_pyi() {
+        let numpy_typing = generate_pyi("numpy", &repo_root()).unwrap();
+        let pyi = fs::read_to_string(numpy_typing.join("__init__.pyi")).unwrap();
+        let (res, stmt) = parse(&pyi).finish().unwrap();
+        for line in res.lines().take(5) {
+            eprintln!("{}", line);
+        }
+        eprintln!("... and more lines");
+        dbg!(stmt);
+        assert!(res.is_empty());
     }
 }
