@@ -5,22 +5,22 @@ expression: "import(\"import numpy, pandas\").finish().unwrap()"
 (
     "",
     Import {
-        components: [
-            ImportComponent {
+        names: [
+            Alias {
                 name: Path {
                     components: [
                         "numpy",
                     ],
                 },
-                alias: None,
+                asname: None,
             },
-            ImportComponent {
+            Alias {
                 name: Path {
                     components: [
                         "pandas",
                     ],
                 },
-                alias: None,
+                asname: None,
             },
         ],
     },

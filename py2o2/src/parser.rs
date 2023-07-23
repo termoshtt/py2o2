@@ -129,40 +129,37 @@ pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ImportComponent<'input> {
+pub struct Alias<'input> {
     name: Path<'input>,
-    alias: Option<&'input str>,
+    asname: Option<&'input str>,
 }
 
-pub fn import_component(input: &str) -> ParseResult<ImportComponent> {
+pub fn alias(input: &str) -> ParseResult<Alias> {
     let (input, name) = path(input)?;
-    let (input, alias) =
+    let (input, asname) =
         opt(tuple((multispace1, tag("as"), multispace1, ident))
-            .map(|(_sp1, _as, _sp2, alias)| alias))
+            .map(|(_sp1, _as, _sp2, asname)| asname))
         .parse(input)?;
-    Ok((input, ImportComponent { name, alias }))
+    Ok((input, Alias { name, asname }))
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Import<'input> {
-    components: Vec<ImportComponent<'input>>,
+    names: Vec<Alias<'input>>,
 }
 
 pub fn import(input: &str) -> ParseResult<Import> {
     let (input, _import) = tag("import").parse(input)?;
     let (input, _sp) = multispace1(input)?;
-    let (input, components) = separated_list1(
-        tuple((multispace0, char(','), multispace0)),
-        import_component,
-    )
-    .parse(input)?;
-    Ok((input, Import { components }))
+    let (input, names) =
+        separated_list1(tuple((multispace0, char(','), multispace0)), alias).parse(input)?;
+    Ok((input, Import { names }))
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ImportFrom<'input> {
     module: Path<'input>,
-    components: Vec<ImportComponent<'input>>,
+    names: Vec<Alias<'input>>,
 }
 
 pub fn import_from(input: &str) -> ParseResult<ImportFrom> {
@@ -172,28 +169,25 @@ pub fn import_from(input: &str) -> ParseResult<ImportFrom> {
     let (input, _sp) = multispace1(input)?;
     let (input, _import) = tag("import").parse(input)?;
     let (input, _sp) = multispace1(input)?;
-    let (input, components) = separated_list1(
-        tuple((multispace0, char(','), multispace0)),
-        import_component,
-    )
-    .parse(input)?;
-    Ok((input, ImportFrom { module, components }))
+    let (input, names) =
+        separated_list1(tuple((multispace0, char(','), multispace0)), alias).parse(input)?;
+    Ok((input, ImportFrom { module, names }))
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Statement<'input> {
+pub enum Stmt<'input> {
     ModuleDoc(&'input str),
     Import(Import<'input>),
     ImportFrom(ImportFrom<'input>),
     FunctionDef(FunctionDef<'input>),
 }
 
-pub fn statement(input: &str) -> ParseResult<Statement> {
+pub fn statement(input: &str) -> ParseResult<Stmt> {
     alt((
-        docstring.map(Statement::ModuleDoc),
-        import.map(Statement::Import),
-        import_from.map(Statement::ImportFrom),
-        function_def.map(Statement::FunctionDef),
+        docstring.map(Stmt::ModuleDoc),
+        import.map(Stmt::Import),
+        import_from.map(Stmt::ImportFrom),
+        function_def.map(Stmt::FunctionDef),
     ))
     .parse(input)
 }
@@ -205,7 +199,7 @@ pub struct AST<'input> {
     function_def: Vec<FunctionDef<'input>>,
 }
 
-pub fn parse(input: &str) -> ParseResult<Vec<Statement>> {
+pub fn parse(input: &str) -> ParseResult<Vec<Stmt>> {
     separated_list0(multispace1, statement).parse(input)
 }
 
