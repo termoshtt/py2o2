@@ -14,7 +14,7 @@ use nom::{
     Parser,
 };
 use std::{
-    path::{Path, PathBuf},
+    path::{self, PathBuf},
     process::Command,
 };
 
@@ -36,6 +36,17 @@ pub fn ident(input0: &str) -> ParseResult<&str> {
     let (_input, tail) = many0(alphanum_1).parse(input)?;
     let n = tail.len() + 1;
     Ok((&input0[n..], &input0[..n]))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Path<'input> {
+    components: Vec<&'input str>,
+}
+
+pub fn path(input: &str) -> ParseResult<Path> {
+    let (input, components) =
+        separated_list1(tuple((multispace0, char('.'), multispace0)), ident).parse(input)?;
+    Ok((input, Path { components }))
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -119,12 +130,12 @@ pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ImportComponent<'input> {
-    name: &'input str,
+    name: Path<'input>,
     alias: Option<&'input str>,
 }
 
 pub fn import_component(input: &str) -> ParseResult<ImportComponent> {
-    let (input, name) = ident(input)?;
+    let (input, name) = path(input)?;
     let (input, alias) =
         opt(tuple((multispace1, tag("as"), multispace1, ident))
             .map(|(_sp1, _as, _sp2, alias)| alias))
@@ -150,20 +161,23 @@ pub fn import(input: &str) -> ParseResult<Import> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ImportFrom<'input> {
-    module: &'input str,
-    names: Vec<&'input str>,
+    module: Path<'input>,
+    components: Vec<ImportComponent<'input>>,
 }
 
 pub fn import_from(input: &str) -> ParseResult<ImportFrom> {
     let (input, _from) = tag("from").parse(input)?;
     let (input, _sp) = multispace1(input)?;
-    let (input, module) = ident(input)?;
+    let (input, module) = path(input)?;
     let (input, _sp) = multispace1(input)?;
     let (input, _import) = tag("import").parse(input)?;
     let (input, _sp) = multispace1(input)?;
-    let (input, names) =
-        separated_list1(tuple((multispace0, char(','), multispace0)), ident).parse(input)?;
-    Ok((input, ImportFrom { module, names }))
+    let (input, components) = separated_list1(
+        tuple((multispace0, char(','), multispace0)),
+        import_component,
+    )
+    .parse(input)?;
+    Ok((input, ImportFrom { module, components }))
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -195,7 +209,7 @@ pub fn parse(input: &str) -> ParseResult<Vec<Statement>> {
     separated_list0(multispace1, statement).parse(input)
 }
 
-pub fn generate_pyi(target: &str, root: &Path) -> Result<PathBuf> {
+pub fn generate_pyi(target: &str, root: &path::Path) -> Result<PathBuf> {
     let dest = root.join("typings").join(target);
     if dest.exists() {
         return Ok(dest);
@@ -292,12 +306,11 @@ mod test {
     fn parse_numpy_init_pyi() {
         let numpy_typing = generate_pyi("numpy", &repo_root()).unwrap();
         let pyi = fs::read_to_string(numpy_typing.join("__init__.pyi")).unwrap();
-        let (res, stmt) = parse(&pyi).finish().unwrap();
+        let (res, _stmt) = parse(&pyi).finish().unwrap();
         for line in res.lines().take(5) {
             eprintln!("{}", line);
         }
         eprintln!("... and more lines");
-        dbg!(stmt);
         assert!(res.is_empty());
     }
 }

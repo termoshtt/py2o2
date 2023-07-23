@@ -5,9 +5,20 @@ expression: "import_from(\"from numpy import array\").finish().unwrap()"
 (
     "",
     ImportFrom {
-        module: "numpy",
-        names: [
-            "array",
+        module: Path {
+            components: [
+                "numpy",
+            ],
+        },
+        components: [
+            ImportComponent {
+                name: Path {
+                    components: [
+                        "array",
+                    ],
+                },
+                alias: None,
+            },
         ],
     },
 )
