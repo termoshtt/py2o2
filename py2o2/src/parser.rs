@@ -209,7 +209,7 @@ pub fn generate_pyi(target: &str, root: &Path) -> Result<PathBuf> {
         .with_context(|| "pyright is not found")?;
     if out.status.success() {
         if dest.exists() {
-            return Ok(dest);
+            Ok(dest)
         } else {
             bail!(
                 "pyright does not creates {}. Something wrong.",
