@@ -1,0 +1,18 @@
+---
+source: py2o2/src/parser.rs
+expression: "arg(\"a: T = None\").finish().unwrap()"
+---
+(
+    "",
+    Arg {
+        name: "a",
+        ty: Some(
+            Name(
+                "T",
+            ),
+        ),
+        default: Some(
+            None,
+        ),
+    },
+)

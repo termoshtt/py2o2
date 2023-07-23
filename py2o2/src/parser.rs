@@ -249,140 +249,38 @@ mod test {
 
     #[test]
     fn parse_arg() {
-        assert_eq!(
-            arg("a").finish().unwrap(),
-            (
-                "",
-                Arg {
-                    name: "a",
-                    ty: None,
-                    default: None
-                }
-            )
-        );
-        assert_eq!(
-            arg("a: T").finish().unwrap(),
-            (
-                "",
-                Arg {
-                    name: "a",
-                    ty: Some(Type::Name("T")),
-                    default: None
-                }
-            )
-        );
-        assert_eq!(
-            arg("a: T = None").finish().unwrap(),
-            (
-                "",
-                Arg {
-                    name: "a",
-                    ty: Some(Type::Name("T")),
-                    default: Some(Expr::None)
-                }
-            )
-        );
-        assert_eq!(
-            arg("a = None").finish().unwrap(),
-            (
-                "",
-                Arg {
-                    name: "a",
-                    ty: None,
-                    default: Some(Expr::None)
-                }
-            )
-        );
+        insta::assert_debug_snapshot!(arg("a").finish().unwrap());
+        insta::assert_debug_snapshot!(arg("a: T").finish().unwrap());
+        insta::assert_debug_snapshot!(arg("a: T = None").finish().unwrap());
+        insta::assert_debug_snapshot!(arg("a = None").finish().unwrap());
     }
 
     #[test]
     fn parse_function_def() {
-        assert_eq!(
-            function_def(
-                r#"
-                def f(a, b):
-                    ...
-                "#
-                .trim()
-            )
-            .finish()
-            .unwrap(),
-            (
-                "",
-                FunctionDef {
-                    name: "f",
-                    args: vec![
-                        Arg {
-                            name: "a",
-                            ty: None,
-                            default: None
-                        },
-                        Arg {
-                            name: "b",
-                            ty: None,
-                            default: None
-                        }
-                    ],
-                    type_: Type::None,
-                }
-            )
-        );
-        assert_eq!(
-            function_def(
-                r#"
-                def g(x: int) -> str:
-                    ...
-                "#
-                .trim()
-            )
-            .finish()
-            .unwrap(),
-            (
-                "",
-                FunctionDef {
-                    name: "g",
-                    args: vec![Arg {
-                        name: "x",
-                        ty: Some(Type::Name("int")),
-                        default: None
-                    },],
-                    type_: Type::Name("str"),
-                }
-            )
+        insta::assert_debug_snapshot!(function_def(
+            r#"
+            def f(a, b):
+                ...
+            "#
+            .trim()
         )
+        .finish()
+        .unwrap());
+        insta::assert_debug_snapshot!(function_def(
+            r#"
+            def g(x: int) -> str:
+                ...
+            "#
+            .trim()
+        )
+        .finish()
+        .unwrap());
     }
 
     #[test]
     fn parse_import() {
-        assert_eq!(
-            import("import numpy, pandas").finish().unwrap(),
-            (
-                "",
-                Import {
-                    components: vec![
-                        ImportComponent {
-                            name: "numpy",
-                            alias: None,
-                        },
-                        ImportComponent {
-                            name: "pandas",
-                            alias: None
-                        }
-                    ]
-                }
-            )
-        );
-
-        assert_eq!(
-            import_from("from numpy import array").finish().unwrap(),
-            (
-                "",
-                ImportFrom {
-                    module: "numpy",
-                    names: vec!["array"]
-                }
-            )
-        );
+        insta::assert_debug_snapshot!(import("import numpy, pandas").finish().unwrap());
+        insta::assert_debug_snapshot!(import_from("from numpy import array").finish().unwrap());
     }
 
     fn repo_root() -> PathBuf {
