@@ -118,16 +118,34 @@ pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct ImportComponent<'input> {
+    name: &'input str,
+    alias: Option<&'input str>,
+}
+
+pub fn import_component(input: &str) -> ParseResult<ImportComponent> {
+    let (input, name) = ident(input)?;
+    let (input, alias) =
+        opt(tuple((multispace1, tag("as"), multispace1, ident))
+            .map(|(_sp1, _as, _sp2, alias)| alias))
+        .parse(input)?;
+    Ok((input, ImportComponent { name, alias }))
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct Import<'input> {
-    names: Vec<&'input str>,
+    components: Vec<ImportComponent<'input>>,
 }
 
 pub fn import(input: &str) -> ParseResult<Import> {
     let (input, _import) = tag("import").parse(input)?;
     let (input, _sp) = multispace1(input)?;
-    let (input, names) =
-        separated_list1(tuple((multispace0, char(','), multispace0)), ident).parse(input)?;
-    Ok((input, Import { names }))
+    let (input, components) = separated_list1(
+        tuple((multispace0, char(','), multispace0)),
+        import_component,
+    )
+    .parse(input)?;
+    Ok((input, Import { components }))
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -341,7 +359,16 @@ mod test {
             (
                 "",
                 Import {
-                    names: vec!["numpy", "pandas"]
+                    components: vec![
+                        ImportComponent {
+                            name: "numpy",
+                            alias: None,
+                        },
+                        ImportComponent {
+                            name: "pandas",
+                            alias: None
+                        }
+                    ]
                 }
             )
         );
