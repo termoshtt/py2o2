@@ -1,6 +1,6 @@
 ---
-source: py2o2/src/parser.rs
-expression: "arg(\"a: T = None\").finish().unwrap()"
+source: py2o2/src/parser/stmt.rs
+expression: "arg(\"a: T\").finish().unwrap()"
 ---
 (
     "",
@@ -11,8 +11,6 @@ expression: "arg(\"a: T = None\").finish().unwrap()"
                 "T",
             ),
         ),
-        default: Some(
-            None,
-        ),
+        default: None,
     },
 )

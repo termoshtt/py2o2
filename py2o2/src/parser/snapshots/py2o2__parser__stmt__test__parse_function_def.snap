@@ -1,5 +1,5 @@
 ---
-source: py2o2/src/parser.rs
+source: py2o2/src/parser/stmt.rs
 expression: "function_def(r#\"\n            def f(a, b):\n                ...\n            \"#.trim()).finish().unwrap()"
 ---
 (
