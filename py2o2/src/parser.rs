@@ -6,7 +6,7 @@
 use anyhow::{bail, Context, Result};
 use nom::{
     branch::alt,
-    bytes::complete::tag,
+    bytes::complete::{tag, take_until},
     character::complete::*,
     combinator::opt,
     multi::{many0, separated_list0, separated_list1},
@@ -20,7 +20,14 @@ use std::{
 
 pub type ParseResult<'input, T> = nom::IResult<&'input str, T>;
 
-fn ident(input0: &str) -> ParseResult<&str> {
+pub fn docstring(input: &str) -> ParseResult<&str> {
+    let (input, _start) = tag(r#"""""#).parse(input)?;
+    let (input, doc) = take_until(r#"""""#).parse(input)?;
+    let (input, _end) = tag(r#"""""#).parse(input)?;
+    Ok((input, doc))
+}
+
+pub fn ident(input0: &str) -> ParseResult<&str> {
     // TODO: Support more unicodes
     // https://docs.python.org/ja/3/reference/lexical_analysis.html#identifiers
     let alpha_1 = satisfy(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '_'));
@@ -38,7 +45,7 @@ pub enum Expr {
     Pass,
 }
 
-fn expr(input: &str) -> ParseResult<Expr> {
+pub fn expr(input: &str) -> ParseResult<Expr> {
     alt((
         tag("None").map(|_| Expr::None),
         tag("...").map(|_| Expr::Ellipsis),
@@ -143,6 +150,7 @@ pub fn import_from(input: &str) -> ParseResult<ImportFrom> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Statement<'input> {
+    ModuleDoc(&'input str),
     Import(Import<'input>),
     ImportFrom(ImportFrom<'input>),
     FunctionDef(FunctionDef<'input>),
@@ -150,6 +158,7 @@ pub enum Statement<'input> {
 
 pub fn statement(input: &str) -> ParseResult<Statement> {
     alt((
+        docstring.map(Statement::ModuleDoc),
         import.map(Statement::Import),
         import_from.map(Statement::ImportFrom),
         function_def.map(Statement::FunctionDef),
@@ -210,6 +219,14 @@ mod test {
         assert_eq!(ident("abc def").finish().unwrap(), (" def", "abc"));
 
         assert!(ident("0abc").finish().is_err());
+    }
+
+    #[test]
+    fn parse_docstring() {
+        assert_eq!(
+            docstring(r#""""document""""#).finish().unwrap(),
+            ("", "document")
+        );
     }
 
     #[test]
