@@ -182,7 +182,7 @@ pub enum Stmt<'input> {
     FunctionDef(FunctionDef<'input>),
 }
 
-pub fn statement(input: &str) -> ParseResult<Stmt> {
+pub fn stmt(input: &str) -> ParseResult<Stmt> {
     alt((
         docstring.map(Stmt::ModuleDoc),
         import.map(Stmt::Import),
@@ -200,7 +200,7 @@ pub struct AST<'input> {
 }
 
 pub fn parse(input: &str) -> ParseResult<Vec<Stmt>> {
-    separated_list0(multispace1, statement).parse(input)
+    separated_list0(multispace1, stmt).parse(input)
 }
 
 pub fn generate_pyi(target: &str, root: &path::Path) -> Result<PathBuf> {
