@@ -180,6 +180,7 @@ pub enum Stmt<'input> {
     Import(Import<'input>),
     ImportFrom(ImportFrom<'input>),
     FunctionDef(FunctionDef<'input>),
+    If(If<'input>),
 }
 
 pub fn stmt(input: &str) -> ParseResult<Stmt> {
@@ -188,8 +189,34 @@ pub fn stmt(input: &str) -> ParseResult<Stmt> {
         import.map(Stmt::Import),
         import_from.map(Stmt::ImportFrom),
         function_def.map(Stmt::FunctionDef),
+        if_.map(Stmt::If),
     ))
     .parse(input)
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct If<'input> {
+    test: Expr,
+    body: Box<Stmt<'input>>,
+    orelse: Option<Box<Stmt<'input>>>,
+}
+
+pub fn if_(input: &str) -> ParseResult<If> {
+    let (input, _if) = tuple((tag("if"), multispace1)).parse(input)?;
+    let (input, test) = expr(input)?;
+    let (input, _colon) = tuple((multispace0, char(':'), multispace0))(input)?;
+    let (input, body) = stmt.map(Box::new).parse(input)?;
+    let (input, orelse) = opt(tuple((
+        multispace1,
+        tag("else"),
+        multispace0,
+        char(':'),
+        multispace0,
+        stmt,
+    ))
+    .map(|(_sp1, _else, _sp2, _colon, _sp3, orelse)| Box::new(orelse)))
+    .parse(input)?;
+    Ok((input, If { test, body, orelse }))
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -289,6 +316,17 @@ mod test {
     fn parse_import() {
         insta::assert_debug_snapshot!(import("import numpy, pandas").finish().unwrap());
         insta::assert_debug_snapshot!(import_from("from numpy import array").finish().unwrap());
+    }
+
+    #[test]
+    fn parse_if() {
+        insta::assert_debug_snapshot!(if_(r#"
+            if sys.version_info >= (3, 9):
+                ...
+            "#
+        .trim())
+        .finish()
+        .unwrap());
     }
 
     fn repo_root() -> PathBuf {
