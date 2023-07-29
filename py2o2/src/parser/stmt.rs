@@ -10,7 +10,7 @@ use nom::{
     Parser,
 };
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum Type<'input> {
     Name(Identifier<'input>),
     None,
@@ -22,7 +22,7 @@ pub fn type_(input: &str) -> ParseResult<Type> {
     Ok((input, Type::Name(name)))
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Arg<'input> {
     pub name: Identifier<'input>,
     pub ty: Option<Type<'input>>,
@@ -40,7 +40,7 @@ pub fn arg(input: &str) -> ParseResult<Arg> {
     Ok((input, Arg { name, ty, default }))
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct FunctionDef<'input> {
     name: Identifier<'input>,
     args: Vec<Arg<'input>>,
@@ -73,7 +73,7 @@ pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
     ))
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Alias<'input> {
     name: Identifier<'input>,
     asname: Option<Identifier<'input>>,
@@ -87,7 +87,7 @@ pub fn alias(input: &str) -> ParseResult<Alias> {
     Ok((input, Alias { name, asname }))
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Import<'input> {
     names: Vec<Alias<'input>>,
 }
@@ -100,7 +100,7 @@ pub fn import(input: &str) -> ParseResult<Import> {
     Ok((input, Import { names }))
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct ImportFrom<'input> {
     module: Identifier<'input>,
     names: Vec<Alias<'input>>,
@@ -118,7 +118,7 @@ pub fn import_from(input: &str) -> ParseResult<ImportFrom> {
     Ok((input, ImportFrom { module, names }))
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum Stmt<'input> {
     ModuleDoc(&'input str),
     Import(Import<'input>),
@@ -138,7 +138,7 @@ pub fn stmt(input: &str) -> ParseResult<Stmt> {
     .parse(input)
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct If<'input> {
     test: Expr<'input>,
     body: Box<Stmt<'input>>,

@@ -1,10 +1,11 @@
 use super::*;
 
-use nom::{branch::alt, bytes::complete::tag, sequence::tuple, Parser};
+use nom::{branch::alt, bytes::complete::tag, number::complete::double, sequence::tuple, Parser};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum Expr<'input> {
     Name { id: Identifier<'input> },
+    Constant { value: Constant<'input> },
     None,
     Ellipsis,
     Pass,
@@ -15,6 +16,7 @@ pub fn expr(input: &str) -> ParseResult<Expr> {
         tag("None").map(|_| Expr::None),
         tag("...").map(|_| Expr::Ellipsis),
         tag("pass").map(|_| Expr::Pass),
+        constant.map(|value| Expr::Constant { value }),
         identifier.map(|id| Expr::Name { id }),
     ))
     .parse(input)
@@ -55,6 +57,17 @@ pub fn cmpop(input: &str) -> ParseResult<CmpOp> {
     .parse(input)
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum Constant<'input> {
+    String(&'input str),
+    Float(f64),
+    Int(i64),
+}
+
+pub fn constant(input: &str) -> ParseResult<Constant> {
+    alt((double.map(|f| Constant::Float(f)),)).parse(input)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -72,5 +85,11 @@ mod test {
         assert_eq!(cmpop("is not").finish().unwrap(), ("", CmpOp::IsNot));
         assert_eq!(cmpop("in").finish().unwrap(), ("", CmpOp::In));
         assert_eq!(cmpop("not in").finish().unwrap(), ("", CmpOp::NotIn));
+    }
+
+    #[test]
+    fn test_expr() {
+        insta::assert_debug_snapshot!(expr("m.a.b").finish().unwrap());
+        insta::assert_debug_snapshot!(expr("1.0").finish().unwrap());
     }
 }

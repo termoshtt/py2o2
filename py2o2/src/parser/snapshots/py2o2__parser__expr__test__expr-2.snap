@@ -1,0 +1,12 @@
+---
+source: py2o2/src/parser/expr.rs
+expression: "expr(\"1.0\").finish().unwrap()"
+---
+(
+    "",
+    Constant {
+        value: Float(
+            1.0,
+        ),
+    },
+)

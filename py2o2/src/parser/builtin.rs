@@ -27,7 +27,7 @@ fn ident(input0: &str) -> ParseResult<&str> {
 }
 
 /// Builtin identifier
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Identifier<'input> {
     components: Vec<&'input str>,
 }

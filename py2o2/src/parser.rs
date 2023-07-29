@@ -20,7 +20,7 @@ use std::{
 
 pub type ParseResult<'input, T> = nom::IResult<&'input str, T>;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct AST<'input> {
     import: Vec<Import<'input>>,
     import_from: Vec<ImportFrom<'input>>,
