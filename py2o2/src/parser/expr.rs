@@ -1,19 +1,33 @@
 use super::*;
 
-use nom::{branch::alt, bytes::complete::tag, number::complete::double, sequence::tuple, Parser};
+use nom::{
+    branch::alt, bytes::complete::tag, combinator::opt, number::complete::double, sequence::tuple,
+    Parser,
+};
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum Expr<'input> {
-    Name { id: Identifier<'input> },
-    Constant { value: Constant<'input> },
-    Tuple { elts: Vec<Expr<'input>> },
+    Name {
+        id: Identifier<'input>,
+    },
+    Constant {
+        value: Constant<'input>,
+    },
+    Tuple {
+        elts: Vec<Self>,
+    },
+    Compare {
+        left: Box<Self>,
+        ops: CmpOp,
+        comparators: Box<Self>,
+    },
     None,
     Ellipsis,
     Pass,
 }
 
 pub fn expr(input: &str) -> ParseResult<Expr> {
-    alt((
+    let (input, e) = alt((
         tag("None").map(|_| Expr::None),
         tag("...").map(|_| Expr::Ellipsis),
         tag("pass").map(|_| Expr::Pass),
@@ -21,7 +35,20 @@ pub fn expr(input: &str) -> ParseResult<Expr> {
         identifier.map(|id| Expr::Name { id }),
         expr_tuple.map(|elts| Expr::Tuple { elts }),
     ))
-    .parse(input)
+    .parse(input)?;
+    let (input, comparators) = opt(tuple((multispace0, cmpop, multispace0, expr))).parse(input)?;
+    if let Some((_sp1, ops, _sp2, comparators)) = comparators {
+        Ok((
+            input,
+            Expr::Compare {
+                left: Box::new(e),
+                ops,
+                comparators: Box::new(comparators),
+            },
+        ))
+    } else {
+        Ok((input, e))
+    }
 }
 
 /// Comparison operator
@@ -113,5 +140,8 @@ mod test {
         // Tuples
         insta::assert_debug_snapshot!(expr("()").finish().unwrap()); // zero-sized tuple
         insta::assert_debug_snapshot!(expr("(a, 1.0)").finish().unwrap());
+
+        // Compare
+        insta::assert_debug_snapshot!(expr("sys.version_info >= (3, 9)").finish().unwrap());
     }
 }
