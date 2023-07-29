@@ -26,7 +26,7 @@ pub fn type_(input: &str) -> ParseResult<Type> {
 pub struct Arg<'input> {
     pub name: Identifier<'input>,
     pub ty: Option<Type<'input>>,
-    pub default: Option<Expr>,
+    pub default: Option<Expr<'input>>,
 }
 
 pub fn arg(input: &str) -> ParseResult<Arg> {
@@ -140,7 +140,7 @@ pub fn stmt(input: &str) -> ParseResult<Stmt> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct If<'input> {
-    test: Expr,
+    test: Expr<'input>,
     body: Box<Stmt<'input>>,
     orelse: Option<Box<Stmt<'input>>>,
 }
