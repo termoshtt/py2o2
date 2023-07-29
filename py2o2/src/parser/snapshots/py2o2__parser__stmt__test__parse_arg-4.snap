@@ -5,7 +5,11 @@ expression: "arg(\"a = None\").finish().unwrap()"
 (
     "",
     Arg {
-        name: "a",
+        name: Identifier {
+            components: [
+                "a",
+            ],
+        },
         ty: None,
         default: Some(
             None,

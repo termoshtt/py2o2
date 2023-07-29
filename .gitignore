@@ -12,6 +12,7 @@ Cargo.lock
 
 # insta snapshot
 .*.rs.pending-snap
+*.snap.new
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb

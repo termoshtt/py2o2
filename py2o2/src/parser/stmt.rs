@@ -12,26 +12,26 @@ use nom::{
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Type<'input> {
-    Name(&'input str),
+    Name(Identifier<'input>),
     None,
 }
 
 pub fn type_(input: &str) -> ParseResult<Type> {
     // FIXME: More possible types e.g. `Callable`
-    let (input, name) = ident(input)?;
+    let (input, name) = identifier(input)?;
     Ok((input, Type::Name(name)))
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Arg<'input> {
-    pub name: &'input str,
+    pub name: Identifier<'input>,
     pub ty: Option<Type<'input>>,
     pub default: Option<Expr>,
 }
 
 pub fn arg(input: &str) -> ParseResult<Arg> {
     let (input, (name, ty, default)) = tuple((
-        ident,
+        identifier,
         opt(tuple((multispace0, char(':'), multispace0, type_)).map(|(_sp1, _colon, _sp2, ty)| ty)),
         opt(tuple((multispace0, char('='), multispace0, expr))
             .map(|(_sp1, _colon, _sp2, default)| default)),
@@ -42,7 +42,7 @@ pub fn arg(input: &str) -> ParseResult<Arg> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FunctionDef<'input> {
-    name: &'input str,
+    name: Identifier<'input>,
     args: Vec<Arg<'input>>,
     type_: Type<'input>,
 }
@@ -50,7 +50,7 @@ pub struct FunctionDef<'input> {
 pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
     let (input, _def) = tag("def").parse(input)?;
     let (input, _space) = multispace1(input)?;
-    let (input, name) = ident(input)?;
+    let (input, name) = identifier(input)?;
     let (input, args) = delimited(
         char('('),
         separated_list0(tuple((multispace0, char(','), multispace0)), arg),
@@ -75,16 +75,15 @@ pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Alias<'input> {
-    name: Path<'input>,
-    asname: Option<&'input str>,
+    name: Identifier<'input>,
+    asname: Option<Identifier<'input>>,
 }
 
 pub fn alias(input: &str) -> ParseResult<Alias> {
-    let (input, name) = path(input)?;
-    let (input, asname) =
-        opt(tuple((multispace1, tag("as"), multispace1, ident))
-            .map(|(_sp1, _as, _sp2, asname)| asname))
-        .parse(input)?;
+    let (input, name) = identifier(input)?;
+    let (input, asname) = opt(tuple((multispace1, tag("as"), multispace1, identifier))
+        .map(|(_sp1, _as, _sp2, asname)| asname))
+    .parse(input)?;
     Ok((input, Alias { name, asname }))
 }
 
@@ -103,14 +102,14 @@ pub fn import(input: &str) -> ParseResult<Import> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ImportFrom<'input> {
-    module: Path<'input>,
+    module: Identifier<'input>,
     names: Vec<Alias<'input>>,
 }
 
 pub fn import_from(input: &str) -> ParseResult<ImportFrom> {
     let (input, _from) = tag("from").parse(input)?;
     let (input, _sp) = multispace1(input)?;
-    let (input, module) = path(input)?;
+    let (input, module) = identifier(input)?;
     let (input, _sp) = multispace1(input)?;
     let (input, _import) = tag("import").parse(input)?;
     let (input, _sp) = multispace1(input)?;

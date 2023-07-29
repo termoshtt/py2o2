@@ -5,20 +5,36 @@ expression: "function_def(r#\"\n            def g(x: int) -> str:\n             
 (
     "",
     FunctionDef {
-        name: "g",
+        name: Identifier {
+            components: [
+                "g",
+            ],
+        },
         args: [
             Arg {
-                name: "x",
+                name: Identifier {
+                    components: [
+                        "x",
+                    ],
+                },
                 ty: Some(
                     Name(
-                        "int",
+                        Identifier {
+                            components: [
+                                "int",
+                            ],
+                        },
                     ),
                 ),
                 default: None,
             },
         ],
         type_: Name(
-            "str",
+            Identifier {
+                components: [
+                    "str",
+                ],
+            },
         ),
     },
 )

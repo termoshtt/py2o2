@@ -5,7 +5,11 @@ expression: "arg(\"a\").finish().unwrap()"
 (
     "",
     Arg {
-        name: "a",
+        name: Identifier {
+            components: [
+                "a",
+            ],
+        },
         ty: None,
         default: None,
     },

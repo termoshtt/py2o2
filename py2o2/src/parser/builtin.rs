@@ -15,7 +15,7 @@ pub fn docstring(input: &str) -> ParseResult<&str> {
     Ok((input, doc))
 }
 
-pub fn ident(input0: &str) -> ParseResult<&str> {
+fn ident(input0: &str) -> ParseResult<&str> {
     // TODO: Support more unicode
     // https://docs.python.org/ja/3/reference/lexical_analysis.html#identifiers
     let alpha_1 = satisfy(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '_'));
@@ -26,15 +26,16 @@ pub fn ident(input0: &str) -> ParseResult<&str> {
     Ok((&input0[n..], &input0[..n]))
 }
 
+/// Builtin identifier
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Path<'input> {
+pub struct Identifier<'input> {
     components: Vec<&'input str>,
 }
 
-pub fn path(input: &str) -> ParseResult<Path> {
+pub fn identifier(input: &str) -> ParseResult<Identifier> {
     let (input, components) =
         separated_list1(tuple((multispace0, char('.'), multispace0)), ident).parse(input)?;
-    Ok((input, Path { components }))
+    Ok((input, Identifier { components }))
 }
 
 #[cfg(test)]

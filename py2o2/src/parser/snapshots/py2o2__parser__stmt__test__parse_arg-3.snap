@@ -5,10 +5,18 @@ expression: "arg(\"a: T = None\").finish().unwrap()"
 (
     "",
     Arg {
-        name: "a",
+        name: Identifier {
+            components: [
+                "a",
+            ],
+        },
         ty: Some(
             Name(
-                "T",
+                Identifier {
+                    components: [
+                        "T",
+                    ],
+                },
             ),
         ),
         default: Some(
