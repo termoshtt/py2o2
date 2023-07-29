@@ -1,0 +1,10 @@
+---
+source: py2o2/src/parser/expr.rs
+expression: "expr(\"()\").finish().unwrap()"
+---
+(
+    "",
+    Tuple {
+        elts: [],
+    },
+)

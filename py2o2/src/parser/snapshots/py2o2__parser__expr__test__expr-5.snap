@@ -1,0 +1,23 @@
+---
+source: py2o2/src/parser/expr.rs
+expression: "expr(\"(a, 1.0)\").finish().unwrap()"
+---
+(
+    "",
+    Tuple {
+        elts: [
+            Name {
+                id: Identifier {
+                    components: [
+                        "a",
+                    ],
+                },
+            },
+            Constant {
+                value: Float(
+                    1.0,
+                ),
+            },
+        ],
+    },
+)

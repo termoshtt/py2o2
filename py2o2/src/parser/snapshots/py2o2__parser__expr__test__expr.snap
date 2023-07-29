@@ -1,15 +1,13 @@
 ---
 source: py2o2/src/parser/expr.rs
-expression: "expr(\"m.a.b\").finish().unwrap()"
+expression: "expr(\"a\").finish().unwrap()"
 ---
 (
     "",
     Name {
         id: Identifier {
             components: [
-                "m",
                 "a",
-                "b",
             ],
         },
     },

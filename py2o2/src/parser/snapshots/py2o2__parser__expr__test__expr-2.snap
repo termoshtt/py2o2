@@ -1,12 +1,16 @@
 ---
 source: py2o2/src/parser/expr.rs
-expression: "expr(\"1.0\").finish().unwrap()"
+expression: "expr(\"m.a.b\").finish().unwrap()"
 ---
 (
     "",
-    Constant {
-        value: Float(
-            1.0,
-        ),
+    Name {
+        id: Identifier {
+            components: [
+                "m",
+                "a",
+                "b",
+            ],
+        },
     },
 )

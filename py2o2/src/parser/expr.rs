@@ -6,6 +6,7 @@ use nom::{branch::alt, bytes::complete::tag, number::complete::double, sequence:
 pub enum Expr<'input> {
     Name { id: Identifier<'input> },
     Constant { value: Constant<'input> },
+    Tuple { elts: Vec<Expr<'input>> },
     None,
     Ellipsis,
     Pass,
@@ -18,6 +19,7 @@ pub fn expr(input: &str) -> ParseResult<Expr> {
         tag("pass").map(|_| Expr::Pass),
         constant.map(|value| Expr::Constant { value }),
         identifier.map(|id| Expr::Name { id }),
+        expr_tuple.map(|elts| Expr::Tuple { elts }),
     ))
     .parse(input)
 }
@@ -68,6 +70,18 @@ pub fn constant(input: &str) -> ParseResult<Constant> {
     alt((double.map(|f| Constant::Float(f)),)).parse(input)
 }
 
+pub fn expr_tuple(input: &str) -> ParseResult<Vec<Expr>> {
+    let (input, _open) = char('(').parse(input)?;
+    let (input, _sp) = multispace0(input)?;
+
+    let (input, inner) =
+        separated_list0(tuple((multispace0, char(','), multispace0)), expr).parse(input)?;
+
+    let (input, _sp) = multispace0(input)?;
+    let (input, _close) = char(')').parse(input)?;
+    Ok((input, inner))
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -89,7 +103,15 @@ mod test {
 
     #[test]
     fn test_expr() {
+        // Name
+        insta::assert_debug_snapshot!(expr("a").finish().unwrap());
         insta::assert_debug_snapshot!(expr("m.a.b").finish().unwrap());
+
+        // Constant
         insta::assert_debug_snapshot!(expr("1.0").finish().unwrap());
+
+        // Tuples
+        insta::assert_debug_snapshot!(expr("()").finish().unwrap()); // zero-sized tuple
+        insta::assert_debug_snapshot!(expr("(a, 1.0)").finish().unwrap());
     }
 }
