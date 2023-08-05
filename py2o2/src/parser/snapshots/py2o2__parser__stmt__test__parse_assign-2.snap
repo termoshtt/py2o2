@@ -1,0 +1,32 @@
+---
+source: py2o2/src/parser/stmt.rs
+expression: "assign(\"a: int = 1\").finish().unwrap()"
+---
+(
+    "",
+    Assign {
+        targets: [
+            Name {
+                id: Identifier {
+                    components: [
+                        "a",
+                    ],
+                },
+            },
+        ],
+        value: Constant {
+            value: Float(
+                1.0,
+            ),
+        },
+        type_comment: Some(
+            Name(
+                Identifier {
+                    components: [
+                        "int",
+                    ],
+                },
+            ),
+        ),
+    },
+)

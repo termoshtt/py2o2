@@ -121,16 +121,24 @@ pub fn import_from(input: &str) -> ParseResult<ImportFrom> {
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum Stmt<'input> {
     ModuleDoc(&'input str),
+    /// `Assign(expr* targets, expr value, string? type_comment)`
+    Assign(Assign<'input>),
+    /// `Import(alias* names)`
     Import(Import<'input>),
+    /// `ImportFrom(identifier? module, alias* names, int? level)`
     ImportFrom(ImportFrom<'input>),
+    /// `FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)`
     FunctionDef(FunctionDef<'input>),
+    /// `If(expr test, stmt* body, stmt* orelse)`
     If(If<'input>),
+    /// `Expr(expr value)`
     Expr(Expr<'input>),
 }
 
 pub fn stmt(input: &str) -> ParseResult<Stmt> {
     alt((
         docstring.map(Stmt::ModuleDoc),
+        assign.map(Stmt::Assign),
         import.map(Stmt::Import),
         import_from.map(Stmt::ImportFrom),
         function_def.map(Stmt::FunctionDef),
@@ -138,6 +146,31 @@ pub fn stmt(input: &str) -> ParseResult<Stmt> {
         expr.map(Stmt::Expr),
     ))
     .parse(input)
+}
+
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
+pub struct Assign<'input> {
+    targets: Vec<Expr<'input>>,
+    value: Expr<'input>,
+    type_comment: Option<Type<'input>>,
+}
+
+pub fn assign(input: &str) -> ParseResult<Assign> {
+    let (input, targets) =
+        separated_list1(tuple((multispace0, char(','), multispace0)), expr).parse(input)?;
+    let (input, type_comment) =
+        opt(tuple((multispace0, char(':'), multispace0, type_)).map(|(_sp1, _comma, _sp2, ty)| ty))
+            .parse(input)?;
+    let (input, (_sp1, _eq, _sp2, value)) =
+        tuple((multispace0, char('='), multispace0, expr)).parse(input)?;
+    Ok((
+        input,
+        Assign {
+            targets,
+            value,
+            type_comment,
+        },
+    ))
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
@@ -215,5 +248,11 @@ mod test {
         .trim())
         .finish()
         .unwrap());
+    }
+
+    #[test]
+    fn parse_assign() {
+        insta::assert_debug_snapshot!(assign("a = 1").finish().unwrap());
+        insta::assert_debug_snapshot!(assign("a: int = 1").finish().unwrap());
     }
 }
