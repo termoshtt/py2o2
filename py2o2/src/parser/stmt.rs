@@ -125,6 +125,7 @@ pub enum Stmt<'input> {
     ImportFrom(ImportFrom<'input>),
     FunctionDef(FunctionDef<'input>),
     If(If<'input>),
+    Expr(Expr<'input>),
 }
 
 pub fn stmt(input: &str) -> ParseResult<Stmt> {
@@ -134,6 +135,7 @@ pub fn stmt(input: &str) -> ParseResult<Stmt> {
         import_from.map(Stmt::ImportFrom),
         function_def.map(Stmt::FunctionDef),
         if_.map(Stmt::If),
+        expr.map(Stmt::Expr),
     ))
     .parse(input)
 }

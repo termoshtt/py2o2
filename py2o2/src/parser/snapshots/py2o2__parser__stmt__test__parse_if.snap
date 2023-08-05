@@ -1,0 +1,38 @@
+---
+source: py2o2/src/parser/stmt.rs
+expression: "if_(r#\"\n            if sys.version_info >= (3, 9):\n                ...\n            \"#.trim()).finish().unwrap()"
+---
+(
+    "",
+    If {
+        test: Compare {
+            left: Name {
+                id: Identifier {
+                    components: [
+                        "sys",
+                        "version_info",
+                    ],
+                },
+            },
+            ops: GtE,
+            comparators: Tuple {
+                elts: [
+                    Constant {
+                        value: Float(
+                            3.0,
+                        ),
+                    },
+                    Constant {
+                        value: Float(
+                            9.0,
+                        ),
+                    },
+                ],
+            },
+        },
+        body: Expr(
+            Ellipsis,
+        ),
+        orelse: None,
+    },
+)
