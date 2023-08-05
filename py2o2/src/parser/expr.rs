@@ -7,15 +7,19 @@ use nom::{
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum Expr<'input> {
+    /// `Name(identifier id, expr_context ctx)`
     Name {
         id: Identifier<'input>,
     },
+    /// `Constant(constant value, string? kind)`
     Constant {
         value: Constant<'input>,
     },
+    /// `Tuple(expr* elts, expr_context ctx)`
     Tuple {
         elts: Vec<Self>,
     },
+    /// `Compare(expr left, cmpop* ops, expr* comparators)`
     Compare {
         left: Box<Self>,
         ops: CmpOp,
