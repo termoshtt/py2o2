@@ -7,11 +7,7 @@ expression: "assign(\"a = 1\").finish().unwrap()"
     Assign {
         targets: [
             Name {
-                id: Identifier {
-                    components: [
-                        "a",
-                    ],
-                },
+                id: "a",
             },
         ],
         value: Constant {

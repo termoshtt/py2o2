@@ -5,10 +5,6 @@ expression: "expr(\"a\").finish().unwrap()"
 (
     "",
     Name {
-        id: Identifier {
-            components: [
-                "a",
-            ],
-        },
+        id: "a",
     },
 )

@@ -7,11 +7,7 @@ expression: "assign(\"a: int = 1\").finish().unwrap()"
     Assign {
         targets: [
             Name {
-                id: Identifier {
-                    components: [
-                        "a",
-                    ],
-                },
+                id: "a",
             },
         ],
         value: Constant {
@@ -21,11 +17,7 @@ expression: "assign(\"a: int = 1\").finish().unwrap()"
         },
         type_comment: Some(
             Name(
-                Identifier {
-                    components: [
-                        "int",
-                    ],
-                },
+                "int",
             ),
         ),
     },

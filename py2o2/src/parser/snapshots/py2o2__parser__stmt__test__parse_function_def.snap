@@ -5,27 +5,15 @@ expression: "function_def(r#\"\n            def f(a, b):\n                ...\n 
 (
     "",
     FunctionDef {
-        name: Identifier {
-            components: [
-                "f",
-            ],
-        },
+        name: "f",
         args: [
             Arg {
-                name: Identifier {
-                    components: [
-                        "a",
-                    ],
-                },
+                name: "a",
                 ty: None,
                 default: None,
             },
             Arg {
-                name: Identifier {
-                    components: [
-                        "b",
-                    ],
-                },
+                name: "b",
                 ty: None,
                 default: None,
             },

@@ -7,19 +7,11 @@ expression: "import(\"import numpy, pandas\").finish().unwrap()"
     Import {
         names: [
             Alias {
-                name: Identifier {
-                    components: [
-                        "numpy",
-                    ],
-                },
+                name: "numpy",
                 asname: None,
             },
             Alias {
-                name: Identifier {
-                    components: [
-                        "pandas",
-                    ],
-                },
+                name: "pandas",
                 asname: None,
             },
         ],

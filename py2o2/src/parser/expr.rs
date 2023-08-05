@@ -9,7 +9,7 @@ use nom::{
 pub enum Expr<'input> {
     /// `Name(identifier id, expr_context ctx)`
     Name {
-        id: Identifier<'input>,
+        id: &'input str,
     },
     /// `Constant(constant value, string? kind)`
     Constant {
@@ -136,6 +136,8 @@ mod test {
     fn test_expr() {
         // Name
         insta::assert_debug_snapshot!(expr("a").finish().unwrap());
+
+        // Attribute
         insta::assert_debug_snapshot!(expr("m.a.b").finish().unwrap());
 
         // Constant

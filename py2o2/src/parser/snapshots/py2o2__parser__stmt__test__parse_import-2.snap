@@ -5,18 +5,10 @@ expression: "import_from(\"from numpy import array\").finish().unwrap()"
 (
     "",
     ImportFrom {
-        module: Identifier {
-            components: [
-                "numpy",
-            ],
-        },
+        module: "numpy",
         names: [
             Alias {
-                name: Identifier {
-                    components: [
-                        "array",
-                    ],
-                },
+                name: "array",
                 asname: None,
             },
         ],

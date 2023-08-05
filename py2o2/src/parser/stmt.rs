@@ -12,7 +12,7 @@ use nom::{
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum Type<'input> {
-    Name(Identifier<'input>),
+    Name(&'input str),
     None,
 }
 
@@ -24,7 +24,7 @@ pub fn type_(input: &str) -> ParseResult<Type> {
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Arg<'input> {
-    pub name: Identifier<'input>,
+    pub name: &'input str,
     pub ty: Option<Type<'input>>,
     pub default: Option<Expr<'input>>,
 }
@@ -42,7 +42,7 @@ pub fn arg(input: &str) -> ParseResult<Arg> {
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct FunctionDef<'input> {
-    name: Identifier<'input>,
+    name: &'input str,
     args: Vec<Arg<'input>>,
     type_: Type<'input>,
 }
@@ -75,8 +75,8 @@ pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Alias<'input> {
-    name: Identifier<'input>,
-    asname: Option<Identifier<'input>>,
+    name: &'input str,
+    asname: Option<&'input str>,
 }
 
 pub fn alias(input: &str) -> ParseResult<Alias> {
@@ -102,7 +102,7 @@ pub fn import(input: &str) -> ParseResult<Import> {
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct ImportFrom<'input> {
-    module: Identifier<'input>,
+    module: &'input str,
     names: Vec<Alias<'input>>,
 }
 

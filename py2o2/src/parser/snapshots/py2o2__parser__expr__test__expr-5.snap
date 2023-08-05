@@ -7,11 +7,7 @@ expression: "expr(\"(a, 1.0)\").finish().unwrap()"
     Tuple {
         elts: [
             Name {
-                id: Identifier {
-                    components: [
-                        "a",
-                    ],
-                },
+                id: "a",
             },
             Constant {
                 value: Float(
