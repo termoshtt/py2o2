@@ -76,7 +76,8 @@ pub fn expr(input: &str) -> ParseResult<Expr> {
             continue;
         }
 
-        let (input_new, call_args) = opt(expr_tuple).parse(input)?;
+        let (input_new, call_args) =
+            opt(tuple((multispace0, expr_tuple)).map(|(_sp, args)| args)).parse(input)?;
         if let Some(args) = call_args {
             input = input_new;
             e = Expr::Call {
@@ -186,6 +187,13 @@ mod test {
         insta::assert_debug_snapshot!(expr("a < b").finish().unwrap());
         insta::assert_debug_snapshot!(expr("a < b < c").finish().unwrap()); // (< a (< b c))
 
+        // Call
+        insta::assert_debug_snapshot!(expr("f()").finish().unwrap());
+        insta::assert_debug_snapshot!(expr("f(1, 2)").finish().unwrap());
+        insta::assert_debug_snapshot!(expr("None ()").finish().unwrap()); // This should be parsed as function call
+
+        // Combinations
+        insta::assert_debug_snapshot!(expr("f(1).g.h(2, 3)").finish().unwrap());
         insta::assert_debug_snapshot!(expr("sys.version_info >= (3, 9)").finish().unwrap());
     }
 }

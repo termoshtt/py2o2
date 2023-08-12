@@ -1,0 +1,11 @@
+---
+source: py2o2/src/parser/expr.rs
+expression: "expr(\"None ()\").finish().unwrap()"
+---
+(
+    "",
+    Call {
+        func: None,
+        args: [],
+    },
+)
