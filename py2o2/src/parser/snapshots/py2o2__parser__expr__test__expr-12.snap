@@ -1,30 +1,41 @@
 ---
 source: py2o2/src/parser/expr.rs
-expression: "expr(\"sys.version_info >= (3, 9)\").finish().unwrap()"
+expression: "expr(\"f(1).g.h(2, 3)\").finish().unwrap()"
 ---
 (
     "",
-    Compare {
-        left: Attribute {
-            value: Name {
-                id: "sys",
+    Call {
+        func: Attribute {
+            value: Attribute {
+                value: Call {
+                    func: Name {
+                        id: "f",
+                    },
+                    args: [
+                        Constant {
+                            value: Float(
+                                1.0,
+                            ),
+                        },
+                    ],
+                    keywords: {},
+                },
+                attr: "g",
             },
-            attr: "version_info",
+            attr: "h",
         },
-        ops: GtE,
-        comparators: Tuple {
-            elts: [
-                Constant {
-                    value: Float(
-                        3.0,
-                    ),
-                },
-                Constant {
-                    value: Float(
-                        9.0,
-                    ),
-                },
-            ],
-        },
+        args: [
+            Constant {
+                value: Float(
+                    2.0,
+                ),
+            },
+            Constant {
+                value: Float(
+                    3.0,
+                ),
+            },
+        ],
+        keywords: {},
     },
 )

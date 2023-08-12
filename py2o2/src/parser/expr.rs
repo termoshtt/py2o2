@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::BTreeMap;
 
 use nom::{
     branch::alt, bytes::complete::tag, combinator::opt, number::complete::double, sequence::tuple,
@@ -34,6 +35,7 @@ pub enum Expr<'input> {
     Call {
         func: Box<Self>,
         args: Vec<Self>,
+        keywords: BTreeMap<&'input str, Self>,
     },
     None,
     Ellipsis,
@@ -77,12 +79,13 @@ pub fn expr(input: &str) -> ParseResult<Expr> {
         }
 
         let (input_new, call_args) =
-            opt(tuple((multispace0, expr_tuple)).map(|(_sp, args)| args)).parse(input)?;
-        if let Some(args) = call_args {
+            opt(tuple((multispace0, function_args)).map(|(_sp, args)| args)).parse(input)?;
+        if let Some((args, keywords)) = call_args {
             input = input_new;
             e = Expr::Call {
                 func: Box::new(e),
                 args,
+                keywords,
             };
             continue;
         }
@@ -149,6 +152,36 @@ pub fn expr_tuple(input: &str) -> ParseResult<Vec<Expr>> {
     Ok((input, inner))
 }
 
+pub fn function_args(input: &str) -> ParseResult<(Vec<Expr>, BTreeMap<&str, Expr>)> {
+    let (input, _open) = char('(').parse(input)?;
+    let (input, _sp) = multispace0(input)?;
+
+    let (input, inner) = separated_list0(
+        tuple((multispace0, char(','), multispace0)),
+        tuple((
+            opt(tuple((identifier, multispace0, char('='), multispace0))
+                .map(|(id, _sp1, _eq, _sp2)| id)),
+            expr,
+        )),
+    )
+    .parse(input)?;
+
+    let (input, _sp) = multispace0(input)?;
+    let (input, _close) = char(')').parse(input)?;
+
+    let mut positional = Vec::new();
+    let mut keywords = BTreeMap::new();
+    for (key, arg) in inner {
+        if let Some(key) = key {
+            keywords.insert(key, arg);
+        } else {
+            positional.push(arg);
+        }
+    }
+
+    Ok((input, (positional, keywords)))
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -190,6 +223,7 @@ mod test {
         // Call
         insta::assert_debug_snapshot!(expr("f()").finish().unwrap());
         insta::assert_debug_snapshot!(expr("f(1, 2)").finish().unwrap());
+        insta::assert_debug_snapshot!(expr("f(1, a = 2)").finish().unwrap());
         insta::assert_debug_snapshot!(expr("None ()").finish().unwrap()); // This should be parsed as function call
 
         // Combinations

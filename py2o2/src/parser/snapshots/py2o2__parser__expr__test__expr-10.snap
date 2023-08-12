@@ -1,11 +1,26 @@
 ---
 source: py2o2/src/parser/expr.rs
-expression: "expr(\"None ()\").finish().unwrap()"
+expression: "expr(\"f(1, a = 2)\").finish().unwrap()"
 ---
 (
     "",
     Call {
-        func: None,
-        args: [],
+        func: Name {
+            id: "f",
+        },
+        args: [
+            Constant {
+                value: Float(
+                    1.0,
+                ),
+            },
+        ],
+        keywords: {
+            "a": Constant {
+                value: Float(
+                    2.0,
+                ),
+            },
+        },
     },
 )

@@ -20,5 +20,6 @@ expression: "expr(\"f(1, 2)\").finish().unwrap()"
                 ),
             },
         ],
+        keywords: {},
     },
 )
