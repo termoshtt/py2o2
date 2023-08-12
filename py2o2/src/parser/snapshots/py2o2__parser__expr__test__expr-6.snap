@@ -1,32 +1,16 @@
 ---
 source: py2o2/src/parser/expr.rs
-expression: "expr(\"sys.version_info >= (3, 9)\").finish().unwrap()"
+expression: "expr(\"a < b\").finish().unwrap()"
 ---
 (
     "",
     Compare {
         left: Name {
-            id: Identifier {
-                components: [
-                    "sys",
-                    "version_info",
-                ],
-            },
+            id: "a",
         },
-        ops: GtE,
-        comparators: Tuple {
-            elts: [
-                Constant {
-                    value: Float(
-                        3.0,
-                    ),
-                },
-                Constant {
-                    value: Float(
-                        9.0,
-                    ),
-                },
-            ],
+        ops: Lt,
+        comparators: Name {
+            id: "b",
         },
     },
 )

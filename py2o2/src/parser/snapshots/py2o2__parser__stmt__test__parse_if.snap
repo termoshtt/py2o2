@@ -6,13 +6,11 @@ expression: "if_(r#\"\n            if sys.version_info >= (3, 9):\n             
     "",
     If {
         test: Compare {
-            left: Name {
-                id: Identifier {
-                    components: [
-                        "sys",
-                        "version_info",
-                    ],
+            left: Attribute {
+                value: Name {
+                    id: "sys",
                 },
+                attr: "version_info",
             },
             ops: GtE,
             comparators: Tuple {

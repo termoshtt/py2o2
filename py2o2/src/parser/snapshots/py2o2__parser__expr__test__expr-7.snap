@@ -1,0 +1,22 @@
+---
+source: py2o2/src/parser/expr.rs
+expression: "expr(\"a < b < c\").finish().unwrap()"
+---
+(
+    "",
+    Compare {
+        left: Name {
+            id: "a",
+        },
+        ops: Lt,
+        comparators: Compare {
+            left: Name {
+                id: "b",
+            },
+            ops: Lt,
+            comparators: Name {
+                id: "c",
+            },
+        },
+    },
+)

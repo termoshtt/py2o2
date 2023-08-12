@@ -25,13 +25,23 @@ pub enum Expr<'input> {
         ops: CmpOp,
         comparators: Box<Self>,
     },
+    /// `Attribute(expr value, identifier attr, expr_context ctx)`
+    Attribute {
+        value: Box<Self>,
+        attr: &'input str,
+    },
+    /// `Call(expr func, expr* args, keyword* keywords)`
+    Call {
+        func: Box<Self>,
+        args: Vec<Self>,
+    },
     None,
     Ellipsis,
     Pass,
 }
 
 pub fn expr(input: &str) -> ParseResult<Expr> {
-    let (input, e) = alt((
+    let (mut input, mut e) = alt((
         tag("None").map(|_| Expr::None),
         tag("...").map(|_| Expr::Ellipsis),
         tag("pass").map(|_| Expr::Pass),
@@ -40,18 +50,43 @@ pub fn expr(input: &str) -> ParseResult<Expr> {
         expr_tuple.map(|elts| Expr::Tuple { elts }),
     ))
     .parse(input)?;
-    let (input, comparators) = opt(tuple((multispace0, cmpop, multispace0, expr))).parse(input)?;
-    if let Some((_sp1, ops, _sp2, comparators)) = comparators {
-        Ok((
-            input,
-            Expr::Compare {
+    loop {
+        let (input_new, comparators) = opt(tuple((multispace0, cmpop, multispace0, expr))
+            .map(|(_sp1, ops, _sp2, comparators)| (ops, comparators)))
+        .parse(input)?;
+        if let Some((ops, comparators)) = comparators {
+            input = input_new;
+            e = Expr::Compare {
                 left: Box::new(e),
                 ops,
                 comparators: Box::new(comparators),
-            },
-        ))
-    } else {
-        Ok((input, e))
+            };
+            continue;
+        }
+
+        let (input_new, attr) = opt(tuple((multispace0, char('.'), multispace0, identifier))
+            .map(|(_sp1, _dot, _sp2, attr)| attr))
+        .parse(input)?;
+        if let Some(attr) = attr {
+            input = input_new;
+            e = Expr::Attribute {
+                value: Box::new(e),
+                attr,
+            };
+            continue;
+        }
+
+        let (input_new, call_args) = opt(expr_tuple).parse(input)?;
+        if let Some(args) = call_args {
+            input = input_new;
+            e = Expr::Call {
+                func: Box::new(e),
+                args,
+            };
+            continue;
+        }
+
+        return Ok((input, e));
     }
 }
 
@@ -148,6 +183,9 @@ mod test {
         insta::assert_debug_snapshot!(expr("(a, 1.0)").finish().unwrap());
 
         // Compare
+        insta::assert_debug_snapshot!(expr("a < b").finish().unwrap());
+        insta::assert_debug_snapshot!(expr("a < b < c").finish().unwrap()); // (< a (< b c))
+
         insta::assert_debug_snapshot!(expr("sys.version_info >= (3, 9)").finish().unwrap());
     }
 }

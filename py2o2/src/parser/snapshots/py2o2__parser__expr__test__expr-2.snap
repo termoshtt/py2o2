@@ -4,13 +4,13 @@ expression: "expr(\"m.a.b\").finish().unwrap()"
 ---
 (
     "",
-    Name {
-        id: Identifier {
-            components: [
-                "m",
-                "a",
-                "b",
-            ],
+    Attribute {
+        value: Attribute {
+            value: Name {
+                id: "m",
+            },
+            attr: "a",
         },
+        attr: "b",
     },
 )
