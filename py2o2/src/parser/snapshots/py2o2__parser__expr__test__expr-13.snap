@@ -18,7 +18,7 @@ expression: "expr(\"f(1).g.h(2, 3)\").finish().unwrap()"
                             ),
                         },
                     ],
-                    keywords: {},
+                    keywords: [],
                 },
                 attr: "g",
             },
@@ -36,6 +36,6 @@ expression: "expr(\"f(1).g.h(2, 3)\").finish().unwrap()"
                 ),
             },
         ],
-        keywords: {},
+        keywords: [],
     },
 )

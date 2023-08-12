@@ -1,6 +1,4 @@
 use super::*;
-use std::collections::BTreeMap;
-
 use nom::{
     branch::alt, bytes::complete::tag, combinator::opt, number::complete::double, sequence::tuple,
     Parser,
@@ -35,7 +33,7 @@ pub enum Expr<'input> {
     Call {
         func: Box<Self>,
         args: Vec<Self>,
-        keywords: BTreeMap<&'input str, Self>,
+        keywords: Vec<Keyword<'input>>,
     },
     None,
     Ellipsis,
@@ -156,30 +154,61 @@ pub fn expr_tuple(input: &str) -> ParseResult<Vec<Expr>> {
     Ok((input, inner))
 }
 
-pub fn function_args(input: &str) -> ParseResult<(Vec<Expr>, BTreeMap<&str, Expr>)> {
+/// `keyword = (identifier? arg, expr value)`
+///
+/// keyword arguments supplied to call (NULL identifier for `**kwargs`)
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Keyword<'input> {
+    arg: Option<&'input str>,
+    value: Expr<'input>,
+}
+
+pub fn keyword(input: &str) -> ParseResult<Keyword> {
+    let (input, star) = opt(tag("**")).parse(input)?;
+
+    if let Some(_star) = star {
+        let (input, value) = expr(input)?;
+        return Ok((input, Keyword { arg: None, value }));
+    }
+
+    let (input, arg) = identifier(input)?;
+    let (input, _) = tuple((multispace0, char('='), multispace0)).parse(input)?;
+    let (input, value) = expr(input)?;
+
+    Ok((
+        input,
+        Keyword {
+            arg: Some(arg),
+            value,
+        },
+    ))
+}
+
+enum Arg<'input> {
+    Keyword(Keyword<'input>),
+    Positional(Expr<'input>),
+}
+
+fn arg(input: &str) -> ParseResult<Arg> {
+    alt((keyword.map(Arg::Keyword), expr.map(Arg::Positional))).parse(input)
+}
+
+pub fn function_args(input: &str) -> ParseResult<(Vec<Expr>, Vec<Keyword>)> {
     let (input, _open) = char('(').parse(input)?;
     let (input, _sp) = multispace0(input)?;
 
-    let (input, inner) = separated_list0(
-        tuple((multispace0, char(','), multispace0)),
-        tuple((
-            opt(tuple((identifier, multispace0, char('='), multispace0))
-                .map(|(id, _sp1, _eq, _sp2)| id)),
-            expr,
-        )),
-    )
-    .parse(input)?;
+    let (input, inner) =
+        separated_list0(tuple((multispace0, char(','), multispace0)), arg).parse(input)?;
 
     let (input, _sp) = multispace0(input)?;
     let (input, _close) = char(')').parse(input)?;
 
     let mut positional = Vec::new();
-    let mut keywords = BTreeMap::new();
-    for (key, arg) in inner {
-        if let Some(key) = key {
-            keywords.insert(key, arg);
-        } else {
-            positional.push(arg);
+    let mut keywords = Vec::new();
+    for arg in inner {
+        match arg {
+            Arg::Keyword(keyword) => keywords.push(keyword),
+            Arg::Positional(value) => positional.push(value),
         }
     }
 
@@ -190,6 +219,12 @@ pub fn function_args(input: &str) -> ParseResult<(Vec<Expr>, BTreeMap<&str, Expr
 mod test {
     use super::*;
     use nom::Finish;
+
+    #[test]
+    fn test_keyword() {
+        insta::assert_debug_snapshot!(keyword("a=None").finish().unwrap());
+        insta::assert_debug_snapshot!(keyword("**dict").finish().unwrap());
+    }
 
     #[test]
     fn test_cmpop() {

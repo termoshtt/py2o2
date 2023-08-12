@@ -20,6 +20,6 @@ expression: "expr(r#\"f(1, \"test\")\"#).finish().unwrap()"
                 ),
             },
         ],
-        keywords: {},
+        keywords: [],
     },
 )

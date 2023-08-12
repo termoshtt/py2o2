@@ -9,6 +9,6 @@ expression: "expr(\"f()\").finish().unwrap()"
             id: "f",
         },
         args: [],
-        keywords: {},
+        keywords: [],
     },
 )

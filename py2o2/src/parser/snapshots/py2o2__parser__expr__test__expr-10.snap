@@ -15,12 +15,17 @@ expression: "expr(\"f(1, a = 2)\").finish().unwrap()"
                 ),
             },
         ],
-        keywords: {
-            "a": Constant {
-                value: Float(
-                    2.0,
+        keywords: [
+            Keyword {
+                arg: Some(
+                    "a",
                 ),
+                value: Constant {
+                    value: Float(
+                        2.0,
+                    ),
+                },
             },
-        },
+        ],
     },
 )

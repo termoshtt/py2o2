@@ -7,6 +7,6 @@ expression: "expr(\"None ()\").finish().unwrap()"
     Call {
         func: None,
         args: [],
-        keywords: {},
+        keywords: [],
     },
 )
