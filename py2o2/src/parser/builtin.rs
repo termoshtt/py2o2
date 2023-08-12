@@ -1,17 +1,29 @@
 use super::*;
 
 use nom::{
+    branch::alt,
     bytes::complete::{tag, take_until},
     character::complete::*,
     multi::many0,
     Parser,
 };
 
-pub fn docstring(input: &str) -> ParseResult<&str> {
+pub fn multiline_string_literal(input: &str) -> ParseResult<&str> {
     let (input, _start) = tag(r#"""""#).parse(input)?;
     let (input, doc) = take_until(r#"""""#).parse(input)?;
     let (input, _end) = tag(r#"""""#).parse(input)?;
     Ok((input, doc))
+}
+
+pub fn string_literal(input: &str) -> ParseResult<&str> {
+    let (input, _start) = char('"').parse(input)?;
+    let (input, doc) = take_until(r#"""#).parse(input)?;
+    let (input, _end) = char('"').parse(input)?;
+    Ok((input, doc))
+}
+
+pub fn string(input: &str) -> ParseResult<&str> {
+    alt((multiline_string_literal, string_literal)).parse(input)
 }
 
 pub fn identifier(input0: &str) -> ParseResult<&str> {
@@ -40,9 +52,9 @@ mod test {
     }
 
     #[test]
-    fn parse_docstring() {
+    fn parse_string() {
         assert_eq!(
-            docstring(r#""""document""""#).finish().unwrap(),
+            string(r#""""document""""#).finish().unwrap(),
             ("", "document")
         );
     }

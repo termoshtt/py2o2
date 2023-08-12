@@ -137,7 +137,11 @@ pub enum Constant<'input> {
 }
 
 pub fn constant(input: &str) -> ParseResult<Constant> {
-    alt((double.map(|f| Constant::Float(f)),)).parse(input)
+    alt((
+        double.map(|f| Constant::Float(f)),
+        string.map(|s| Constant::String(s)),
+    ))
+    .parse(input)
 }
 
 pub fn expr_tuple(input: &str) -> ParseResult<Vec<Expr>> {
@@ -224,6 +228,7 @@ mod test {
         insta::assert_debug_snapshot!(expr("f()").finish().unwrap());
         insta::assert_debug_snapshot!(expr("f(1, 2)").finish().unwrap());
         insta::assert_debug_snapshot!(expr("f(1, a = 2)").finish().unwrap());
+        insta::assert_debug_snapshot!(expr(r#"f(1, "test")"#).finish().unwrap());
         insta::assert_debug_snapshot!(expr("None ()").finish().unwrap()); // This should be parsed as function call
 
         // Combinations

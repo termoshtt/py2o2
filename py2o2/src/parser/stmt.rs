@@ -137,7 +137,7 @@ pub enum Stmt<'input> {
 
 pub fn stmt(input: &str) -> ParseResult<Stmt> {
     alt((
-        docstring.map(Stmt::ModuleDoc),
+        string.map(Stmt::ModuleDoc),
         assign.map(Stmt::Assign),
         import.map(Stmt::Import),
         import_from.map(Stmt::ImportFrom),
