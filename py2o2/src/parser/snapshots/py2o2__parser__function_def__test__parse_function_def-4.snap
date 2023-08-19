@@ -22,5 +22,6 @@ expression: "function_def(r#\"\n            def g(**keywords) -> str:\n         
         type_: Name(
             "str",
         ),
+        decorators: [],
     },
 )

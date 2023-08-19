@@ -5,11 +5,10 @@ use nom::{
     bytes::complete::tag,
     character::complete::*,
     combinator::opt,
-    multi::separated_list0,
+    multi::{many0, separated_list0},
     sequence::{delimited, tuple},
     Parser,
 };
-use syn::parse::Parse;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum Type<'input> {
@@ -109,9 +108,14 @@ pub struct FunctionDef<'input> {
     name: &'input str,
     args: Arguments<'input>,
     type_: Type<'input>,
+    decorators: Vec<Expr<'input>>,
 }
 
 pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
+    let (input, decorators) = many0(
+        tuple((char('@'), multispace0, expr, multispace0)).map(|(_at, _sp1, expr, _sp2)| expr),
+    )
+    .parse(input)?;
     let (input, _def) = tag("def").parse(input)?;
     let (input, _space) = multispace1(input)?;
     let (input, name) = identifier(input)?;
@@ -128,6 +132,7 @@ pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
             name,
             args,
             type_: ty.unwrap_or(Type::None),
+            decorators,
         },
     ))
 }
@@ -216,6 +221,30 @@ mod test {
         insta::assert_debug_snapshot!(function_def(
             r#"
             def f(x, /, y, *, a=1):
+                ...
+            "#
+            .trim()
+        )
+        .finish()
+        .unwrap());
+
+        // decorators
+        insta::assert_debug_snapshot!(function_def(
+            r#"
+            @staticmethod
+            def f(a, b):
+                ...
+            "#
+            .trim()
+        )
+        .finish()
+        .unwrap());
+
+        // decorators with arguments
+        insta::assert_debug_snapshot!(function_def(
+            r#"
+            @deco(1, "test")
+            def f(a, b):
                 ...
             "#
             .trim()

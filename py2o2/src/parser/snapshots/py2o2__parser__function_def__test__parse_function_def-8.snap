@@ -1,6 +1,6 @@
 ---
 source: py2o2/src/parser/function_def.rs
-expression: "function_def(r#\"\n            def f(x, /, a=1):\n                ...\n            \"#.trim()).finish().unwrap()"
+expression: "function_def(r#\"\n            @staticmethod\n            def f(a, b):\n                ...\n            \"#.trim()).finish().unwrap()"
 ---
 (
     "",
@@ -11,27 +11,24 @@ expression: "function_def(r#\"\n            def f(x, /, a=1):\n                .
                 Arg {
                     name: "a",
                     ty: None,
-                    default: Some(
-                        Constant {
-                            value: Float(
-                                1.0,
-                            ),
-                        },
-                    ),
+                    default: None,
                 },
-            ],
-            positional_only: [
                 Arg {
-                    name: "x",
+                    name: "b",
                     ty: None,
                     default: None,
                 },
             ],
+            positional_only: [],
             keyword_only: [],
             var_args: None,
             kw_args: None,
         },
         type_: None,
-        decorators: [],
+        decorators: [
+            Name {
+                id: "staticmethod",
+            },
+        ],
     },
 )

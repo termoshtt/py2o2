@@ -26,5 +26,6 @@ expression: "function_def(r#\"\n            def g(x: int) -> str:\n             
         type_: Name(
             "str",
         ),
+        decorators: [],
     },
 )

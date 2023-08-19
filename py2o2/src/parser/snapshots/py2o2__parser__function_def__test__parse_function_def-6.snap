@@ -32,5 +32,6 @@ expression: "function_def(r#\"\n            def f(x, *, a=1):\n                .
             kw_args: None,
         },
         type_: None,
+        decorators: [],
     },
 )

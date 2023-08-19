@@ -25,5 +25,6 @@ expression: "function_def(r#\"\n            def f(a, b):\n                ...\n 
             kw_args: None,
         },
         type_: None,
+        decorators: [],
     },
 )

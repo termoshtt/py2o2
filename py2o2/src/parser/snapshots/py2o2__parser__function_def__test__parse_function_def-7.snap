@@ -38,5 +38,6 @@ expression: "function_def(r#\"\n            def f(x, /, y, *, a=1):\n           
             kw_args: None,
         },
         type_: None,
+        decorators: [],
     },
 )

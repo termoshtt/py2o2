@@ -1,0 +1,49 @@
+---
+source: py2o2/src/parser/function_def.rs
+expression: "function_def(r#\"\n            @deco(1, \"test\")\n            def f(a, b):\n                ...\n            \"#.trim()).finish().unwrap()"
+---
+(
+    "",
+    FunctionDef {
+        name: "f",
+        args: Arguments {
+            args: [
+                Arg {
+                    name: "a",
+                    ty: None,
+                    default: None,
+                },
+                Arg {
+                    name: "b",
+                    ty: None,
+                    default: None,
+                },
+            ],
+            positional_only: [],
+            keyword_only: [],
+            var_args: None,
+            kw_args: None,
+        },
+        type_: None,
+        decorators: [
+            Call {
+                func: Name {
+                    id: "deco",
+                },
+                args: [
+                    Constant {
+                        value: Float(
+                            1.0,
+                        ),
+                    },
+                    Constant {
+                        value: String(
+                            "test",
+                        ),
+                    },
+                ],
+                keywords: [],
+            },
+        ],
+    },
+)
