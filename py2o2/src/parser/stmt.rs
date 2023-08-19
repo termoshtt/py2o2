@@ -119,6 +119,47 @@ pub fn import_from(input: &str) -> ParseResult<ImportFrom> {
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
+pub struct ClassDef<'input> {
+    name: &'input str,
+    bases: Vec<Expr<'input>>,
+    keywords: Vec<Keyword<'input>>,
+    body: Vec<Stmt<'input>>,
+}
+
+pub fn class_def(input: &str) -> ParseResult<ClassDef> {
+    let (input, _class) = tag("class").parse(input)?;
+    let (input, _sp) = multispace1(input)?;
+    let (input, name) = identifier(input)?;
+    let (input, _sp) = multispace0(input)?;
+
+    let (input, bases) = opt(tuple((
+        char('('),
+        multispace0,
+        separated_list0(tuple((multispace0, char(','), multispace0)), expr),
+        multispace0,
+        char(')'),
+    ))
+    .map(|(_open, _sp1, bases, _sp2, _close)| bases))
+    .map(Option::unwrap_or_default)
+    .parse(input)?;
+
+    let (input, _sp) = multispace0(input)?;
+    let (input, _comma) = char(':').parse(input)?;
+    let (input, _sp) = multispace0(input)?;
+    let (input, stmt) = stmt(input)?;
+
+    Ok((
+        input,
+        ClassDef {
+            name,
+            bases,
+            keywords: Vec::new(),
+            body: vec![stmt],
+        },
+    ))
+}
+
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum Stmt<'input> {
     ModuleDoc(&'input str),
     /// `Assign(expr* targets, expr value, string? type_comment)`
@@ -127,6 +168,8 @@ pub enum Stmt<'input> {
     Import(Import<'input>),
     /// `ImportFrom(identifier? module, alias* names, int? level)`
     ImportFrom(ImportFrom<'input>),
+    /// `ClassDef(identifier name, expr* bases, keyword* keywords, stmt* body, expr* decorator_list)`
+    ClassDef(ClassDef<'input>),
     /// `FunctionDef(identifier name, arguments args, stmt* body, expr* decorator_list, expr? returns, string? type_comment)`
     FunctionDef(FunctionDef<'input>),
     /// `If(expr test, stmt* body, stmt* orelse)`
@@ -141,6 +184,7 @@ pub fn stmt(input: &str) -> ParseResult<Stmt> {
         assign.map(Stmt::Assign),
         import.map(Stmt::Import),
         import_from.map(Stmt::ImportFrom),
+        class_def.map(Stmt::ClassDef),
         function_def.map(Stmt::FunctionDef),
         if_.map(Stmt::If),
         expr.map(Stmt::Expr),
@@ -209,6 +253,29 @@ mod test {
         insta::assert_debug_snapshot!(arg("a: T").finish().unwrap());
         insta::assert_debug_snapshot!(arg("a: T = None").finish().unwrap());
         insta::assert_debug_snapshot!(arg("a = None").finish().unwrap());
+    }
+
+    #[test]
+    fn parse_class_def() {
+        insta::assert_debug_snapshot!(class_def(
+            r#"
+            class A:
+                ...
+            "#
+            .trim()
+        )
+        .finish()
+        .unwrap());
+
+        insta::assert_debug_snapshot!(class_def(
+            r#"
+            class A(B):
+                ...
+            "#
+            .trim()
+        )
+        .finish()
+        .unwrap());
     }
 
     #[test]

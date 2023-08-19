@@ -1,0 +1,17 @@
+---
+source: py2o2/src/parser/stmt.rs
+expression: "class_def(r#\"\n            class A:\n                ...\n            \"#.trim()).finish().unwrap()"
+---
+(
+    "",
+    ClassDef {
+        name: "A",
+        bases: [],
+        keywords: [],
+        body: [
+            Expr(
+                Ellipsis,
+            ),
+        ],
+    },
+)

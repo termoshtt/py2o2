@@ -75,11 +75,13 @@ mod test {
     fn parse_numpy_init_pyi() {
         let numpy_typing = generate_pyi("numpy", &repo_root()).unwrap();
         let pyi = fs::read_to_string(numpy_typing.join("__init__.pyi")).unwrap();
-        let (res, _stmt) = parse(&pyi).finish().unwrap();
+        let (res, stmt) = parse(&pyi).finish().unwrap();
+        dbg!(stmt);
+        eprintln!("=== Head of remaining lines ===");
         for line in res.lines().take(5) {
             eprintln!("{}", line);
         }
-        eprintln!("... and more lines");
+        eprintln!("=== and more lines ===");
         assert!(res.is_empty());
     }
 }

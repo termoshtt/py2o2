@@ -1,0 +1,13 @@
+---
+source: py2o2/src/parser/expr.rs
+expression: "keyword(\"**dict\").finish().unwrap()"
+---
+(
+    "",
+    Keyword {
+        arg: None,
+        value: Name {
+            id: "dict",
+        },
+    },
+)

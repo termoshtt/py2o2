@@ -1,0 +1,13 @@
+---
+source: py2o2/src/parser/expr.rs
+expression: "keyword(\"a=None\").finish().unwrap()"
+---
+(
+    "",
+    Keyword {
+        arg: Some(
+            "a",
+        ),
+        value: None,
+    },
+)
