@@ -1,0 +1,26 @@
+---
+source: py2o2/src/parser/function_def.rs
+expression: "function_def(r#\"\n            def g(**keywords) -> str:\n                ...\n            \"#.trim()).finish().unwrap()"
+---
+(
+    "",
+    FunctionDef {
+        name: "g",
+        args: Arguments {
+            args: [],
+            positional_only: [],
+            keyword_only: [],
+            var_args: None,
+            kw_args: Some(
+                Arg {
+                    name: "keywords",
+                    ty: None,
+                    default: None,
+                },
+            ),
+        },
+        type_: Name(
+            "str",
+        ),
+    },
+)

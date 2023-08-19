@@ -6,17 +6,23 @@ expression: "function_def(r#\"\n            def g(x: int) -> str:\n             
     "",
     FunctionDef {
         name: "g",
-        args: [
-            Arg {
-                name: "x",
-                ty: Some(
-                    Name(
-                        "int",
+        args: Arguments {
+            args: [
+                Arg {
+                    name: "x",
+                    ty: Some(
+                        Name(
+                            "int",
+                        ),
                     ),
-                ),
-                default: None,
-            },
-        ],
+                    default: None,
+                },
+            ],
+            positional_only: [],
+            keyword_only: [],
+            var_args: None,
+            kw_args: None,
+        },
         type_: Name(
             "str",
         ),

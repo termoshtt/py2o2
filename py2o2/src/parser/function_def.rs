@@ -1,6 +1,7 @@
 use super::*;
 
 use nom::{
+    branch::alt,
     bytes::complete::tag,
     character::complete::*,
     combinator::opt,
@@ -8,6 +9,7 @@ use nom::{
     sequence::{delimited, tuple},
     Parser,
 };
+use syn::parse::Parse;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub enum Type<'input> {
@@ -21,6 +23,7 @@ pub fn type_(input: &str) -> ParseResult<Type> {
     Ok((input, Type::Name(name)))
 }
 
+/// `arg = (identifier arg, expr? annotation, string? type_comment)`
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Arg<'input> {
     pub name: &'input str,
@@ -40,9 +43,71 @@ pub fn arg(input: &str) -> ParseResult<Arg> {
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
+pub enum ArgLike<'input> {
+    /// Usual argument
+    Arg(Arg<'input>),
+    /// `*args`
+    VarArg(Arg<'input>),
+    /// `**kwds`
+    KwArg(Arg<'input>),
+    /// `/`
+    PositionalSep,
+    /// `*`
+    KeywordSep,
+}
+
+pub fn arg_like(input: &str) -> ParseResult<ArgLike> {
+    alt((
+        char('/').map(|_| ArgLike::PositionalSep),
+        tuple((char('*'), multispace0, arg)).map(|(_star, _sp, arg)| ArgLike::VarArg(arg)),
+        tuple((tag("**"), multispace0, arg)).map(|(_star, _sp, arg)| ArgLike::KwArg(arg)),
+        char('*').map(|_| ArgLike::KeywordSep),
+        arg.map(ArgLike::Arg),
+    ))
+    .parse(input)
+}
+
+#[derive(Debug, PartialEq, PartialOrd, Clone, Default)]
+pub struct Arguments<'input> {
+    /// Usual arguments
+    args: Vec<Arg<'input>>,
+    /// Args before `/`
+    positional_only: Vec<Arg<'input>>,
+    /// Args after `*`
+    keyword_only: Vec<Arg<'input>>,
+    /// `*arg` will be stored without `*`
+    var_args: Option<Arg<'input>>,
+    /// `**kwargs` will be stored without `**`
+    kw_args: Option<Arg<'input>>,
+}
+
+impl<'input> From<Vec<ArgLike<'input>>> for Arguments<'input> {
+    fn from(args: Vec<ArgLike<'input>>) -> Self {
+        let mut arguments = Self::default();
+        let mut cursor = &mut arguments.args;
+        for arg in args {
+            match arg {
+                ArgLike::Arg(arg) => cursor.push(arg),
+                ArgLike::PositionalSep => arguments.positional_only.append(cursor),
+                ArgLike::KeywordSep => cursor = &mut arguments.keyword_only,
+                ArgLike::KwArg(arg) => arguments.kw_args = Some(arg),
+                ArgLike::VarArg(arg) => arguments.var_args = Some(arg),
+            }
+        }
+        arguments
+    }
+}
+
+pub fn arguments(input: &str) -> ParseResult<Arguments> {
+    let (input, args) =
+        separated_list0(tuple((multispace0, char(','), multispace0)), arg_like).parse(input)?;
+    Ok((input, args.into()))
+}
+
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct FunctionDef<'input> {
     name: &'input str,
-    args: Vec<Arg<'input>>,
+    args: Arguments<'input>,
     type_: Type<'input>,
 }
 
@@ -50,12 +115,7 @@ pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
     let (input, _def) = tag("def").parse(input)?;
     let (input, _space) = multispace1(input)?;
     let (input, name) = identifier(input)?;
-    let (input, args) = delimited(
-        char('('),
-        separated_list0(tuple((multispace0, char(','), multispace0)), arg),
-        char(')'),
-    )
-    .parse(input)?;
+    let (input, args) = delimited(char('('), arguments, char(')')).parse(input)?;
     let (input, ty) =
         opt(tuple((multispace0, tag("->"), multispace0, type_)).map(|(_sp1, _arrow, _sp2, ty)| ty))
             .parse(input)?;

@@ -1,0 +1,42 @@
+---
+source: py2o2/src/parser/function_def.rs
+expression: "function_def(r#\"\n            def f(x, /, y, *, a=1):\n                ...\n            \"#.trim()).finish().unwrap()"
+---
+(
+    "",
+    FunctionDef {
+        name: "f",
+        args: Arguments {
+            args: [
+                Arg {
+                    name: "y",
+                    ty: None,
+                    default: None,
+                },
+            ],
+            positional_only: [
+                Arg {
+                    name: "x",
+                    ty: None,
+                    default: None,
+                },
+            ],
+            keyword_only: [
+                Arg {
+                    name: "a",
+                    ty: None,
+                    default: Some(
+                        Constant {
+                            value: Float(
+                                1.0,
+                            ),
+                        },
+                    ),
+                },
+            ],
+            var_args: None,
+            kw_args: None,
+        },
+        type_: None,
+    },
+)
