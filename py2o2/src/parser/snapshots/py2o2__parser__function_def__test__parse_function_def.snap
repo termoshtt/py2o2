@@ -1,0 +1,23 @@
+---
+source: py2o2/src/parser/function_def.rs
+expression: "function_def(r#\"\n            def f(a, b):\n                ...\n            \"#.trim()).finish().unwrap()"
+---
+(
+    "",
+    FunctionDef {
+        name: "f",
+        args: [
+            Arg {
+                name: "a",
+                ty: None,
+                default: None,
+            },
+            Arg {
+                name: "b",
+                ty: None,
+                default: None,
+            },
+        ],
+        type_: None,
+    },
+)

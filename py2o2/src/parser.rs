@@ -5,10 +5,12 @@
 
 mod builtin;
 mod expr;
+mod function_def;
 mod stmt;
 
 pub use builtin::*;
 pub use expr::*;
+pub use function_def::*;
 pub use stmt::*;
 
 use anyhow::{bail, Context, Result};
