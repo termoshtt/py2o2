@@ -4,7 +4,9 @@
 //!
 
 mod builtin;
+mod expr;
 
 pub use builtin::*;
+pub use expr::*;
 
 pub type ParseResult<'input, T> = nom::IResult<&'input str, T>;
