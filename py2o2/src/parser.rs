@@ -14,6 +14,7 @@ pub use function_def::*;
 pub use stmt::*;
 
 use anyhow::{bail, Context, Result};
+pub use expr::*;
 use nom::{character::complete::*, multi::separated_list0, Parser};
 use std::{
     path::{self, PathBuf},

@@ -1,6 +1,12 @@
 use super::*;
 use nom::{
-    branch::alt, bytes::complete::tag, combinator::opt, number::complete::double, sequence::tuple,
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{char, multispace0, multispace1},
+    combinator::opt,
+    multi::separated_list0,
+    number::complete::double,
+    sequence::tuple,
     Parser,
 };
 
@@ -135,11 +141,7 @@ pub enum Constant<'input> {
 }
 
 pub fn constant(input: &str) -> ParseResult<Constant> {
-    alt((
-        double.map(|f| Constant::Float(f)),
-        string.map(|s| Constant::String(s)),
-    ))
-    .parse(input)
+    alt((double.map(Constant::Float), string.map(Constant::String))).parse(input)
 }
 
 pub fn expr_tuple(input: &str) -> ParseResult<Vec<Expr>> {
@@ -222,8 +224,27 @@ mod test {
 
     #[test]
     fn test_keyword() {
-        insta::assert_debug_snapshot!(keyword("a=None").finish().unwrap());
-        insta::assert_debug_snapshot!(keyword("**dict").finish().unwrap());
+        let (res, out) = keyword("a=None").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Keyword {
+            arg: Some(
+                "a",
+            ),
+            value: None,
+        }
+        "###);
+
+        let (res, out) = keyword("**kwargs").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Keyword {
+            arg: None,
+            value: Name {
+                id: "kwargs",
+            },
+        }
+        "###);
     }
 
     #[test]
@@ -243,31 +264,258 @@ mod test {
     #[test]
     fn test_expr() {
         // Name
-        insta::assert_debug_snapshot!(expr("a").finish().unwrap());
+        let (res, out) = expr("a").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Name {
+            id: "a",
+        }
+        "###);
 
         // Attribute
-        insta::assert_debug_snapshot!(expr("m.a.b").finish().unwrap());
+        let (res, out) = expr("m.a.b").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Attribute {
+            value: Attribute {
+                value: Name {
+                    id: "m",
+                },
+                attr: "a",
+            },
+            attr: "b",
+        }
+        "###);
 
         // Constant
-        insta::assert_debug_snapshot!(expr("1.0").finish().unwrap());
+        let (res, out) = expr("1.0").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Constant {
+            value: Float(
+                1.0,
+            ),
+        }
+        "###);
 
         // Tuples
-        insta::assert_debug_snapshot!(expr("()").finish().unwrap()); // zero-sized tuple
-        insta::assert_debug_snapshot!(expr("(a, 1.0)").finish().unwrap());
+        let (res, out) = expr("()").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Tuple {
+            elts: [],
+        }
+        "###);
+        let (res, out) = expr("(a, 1.0)").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Tuple {
+            elts: [
+                Name {
+                    id: "a",
+                },
+                Constant {
+                    value: Float(
+                        1.0,
+                    ),
+                },
+            ],
+        }
+        "###);
 
         // Compare
-        insta::assert_debug_snapshot!(expr("a < b").finish().unwrap());
-        insta::assert_debug_snapshot!(expr("a < b < c").finish().unwrap()); // (< a (< b c))
+        let (res, out) = expr("a < b").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Compare {
+            left: Name {
+                id: "a",
+            },
+            ops: Lt,
+            comparators: Name {
+                id: "b",
+            },
+        }
+        "###);
+        let (res, out) = expr("a < b < c").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Compare {
+            left: Name {
+                id: "a",
+            },
+            ops: Lt,
+            comparators: Compare {
+                left: Name {
+                    id: "b",
+                },
+                ops: Lt,
+                comparators: Name {
+                    id: "c",
+                },
+            },
+        }
+        "###);
 
         // Call
-        insta::assert_debug_snapshot!(expr("f()").finish().unwrap());
-        insta::assert_debug_snapshot!(expr("f(1, 2)").finish().unwrap());
-        insta::assert_debug_snapshot!(expr("f(1, a = 2)").finish().unwrap());
-        insta::assert_debug_snapshot!(expr(r#"f(1, "test")"#).finish().unwrap());
-        insta::assert_debug_snapshot!(expr("None ()").finish().unwrap()); // This should be parsed as function call
+        let (res, out) = expr("f()").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Call {
+            func: Name {
+                id: "f",
+            },
+            args: [],
+            keywords: [],
+        }
+        "###);
+        let (res, out) = expr("f(1, 2)").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Call {
+            func: Name {
+                id: "f",
+            },
+            args: [
+                Constant {
+                    value: Float(
+                        1.0,
+                    ),
+                },
+                Constant {
+                    value: Float(
+                        2.0,
+                    ),
+                },
+            ],
+            keywords: [],
+        }
+        "###);
+        let (res, out) = expr("f(1, a = 2)").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Call {
+            func: Name {
+                id: "f",
+            },
+            args: [
+                Constant {
+                    value: Float(
+                        1.0,
+                    ),
+                },
+            ],
+            keywords: [
+                Keyword {
+                    arg: Some(
+                        "a",
+                    ),
+                    value: Constant {
+                        value: Float(
+                            2.0,
+                        ),
+                    },
+                },
+            ],
+        }
+        "###);
+        let (res, out) = expr(r#"f(1, "test")"#).finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Call {
+            func: Name {
+                id: "f",
+            },
+            args: [
+                Constant {
+                    value: Float(
+                        1.0,
+                    ),
+                },
+                Constant {
+                    value: String(
+                        "test",
+                    ),
+                },
+            ],
+            keywords: [],
+        }
+        "###);
+        let (res, out) = expr("None ()").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Call {
+            func: None,
+            args: [],
+            keywords: [],
+        }
+        "###);
 
         // Combinations
-        insta::assert_debug_snapshot!(expr("f(1).g.h(2, 3)").finish().unwrap());
-        insta::assert_debug_snapshot!(expr("sys.version_info >= (3, 9)").finish().unwrap());
+        let (res, out) = expr("f(1).g.h(2, 3)").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Call {
+            func: Attribute {
+                value: Attribute {
+                    value: Call {
+                        func: Name {
+                            id: "f",
+                        },
+                        args: [
+                            Constant {
+                                value: Float(
+                                    1.0,
+                                ),
+                            },
+                        ],
+                        keywords: [],
+                    },
+                    attr: "g",
+                },
+                attr: "h",
+            },
+            args: [
+                Constant {
+                    value: Float(
+                        2.0,
+                    ),
+                },
+                Constant {
+                    value: Float(
+                        3.0,
+                    ),
+                },
+            ],
+            keywords: [],
+        }
+        "###);
+        let (res, out) = expr("sys.version_info >= (3, 9)").finish().unwrap();
+        assert_eq!(res, "");
+        insta::assert_debug_snapshot!(out, @r###"
+        Compare {
+            left: Attribute {
+                value: Name {
+                    id: "sys",
+                },
+                attr: "version_info",
+            },
+            ops: GtE,
+            comparators: Tuple {
+                elts: [
+                    Constant {
+                        value: Float(
+                            3.0,
+                        ),
+                    },
+                    Constant {
+                        value: Float(
+                            9.0,
+                        ),
+                    },
+                ],
+            },
+        }
+        "###);
     }
 }

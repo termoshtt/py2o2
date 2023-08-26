@@ -1,4 +1,4 @@
-use super::*;
+use super::ParseResult;
 
 use nom::{
     branch::alt,
