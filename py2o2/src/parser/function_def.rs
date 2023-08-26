@@ -1,4 +1,4 @@
-use super::*;
+use super::{builtin::*, expr::*, ParseResult};
 
 use nom::{
     branch::alt,
@@ -139,83 +139,275 @@ pub fn function_def(input: &str) -> ParseResult<FunctionDef> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use nom::Finish;
+    use super::{super::test::CheckParsed, *};
 
     #[test]
     fn parse_arg() {
-        insta::assert_debug_snapshot!(arg("a").finish().unwrap());
-        insta::assert_debug_snapshot!(arg("a: T").finish().unwrap());
-        insta::assert_debug_snapshot!(arg("a: T = None").finish().unwrap());
-        insta::assert_debug_snapshot!(arg("a = None").finish().unwrap());
+        insta::assert_debug_snapshot!(arg("a").check_parsed(),
+            @r###"
+            Arg {
+                name: "a",
+                ty: None,
+                default: None,
+            }
+            "###
+        );
+        insta::assert_debug_snapshot!(arg("a: T").check_parsed(),
+            @r###"
+            Arg {
+                name: "a",
+                ty: Some(
+                    Name(
+                        "T",
+                    ),
+                ),
+                default: None,
+            }
+            "###
+        );
+        insta::assert_debug_snapshot!(arg("a: T = None").check_parsed(),
+            @r###"
+            Arg {
+                name: "a",
+                ty: Some(
+                    Name(
+                        "T",
+                    ),
+                ),
+                default: Some(
+                    None,
+                ),
+            }
+            "###
+        );
+        insta::assert_debug_snapshot!(arg("a = None").check_parsed(),
+            @r###"
+            Arg {
+                name: "a",
+                ty: None,
+                default: Some(
+                    None,
+                ),
+            }
+            "###
+        );
     }
 
     #[test]
     fn parse_function_def() {
-        insta::assert_debug_snapshot!(function_def(
-            r#"
-            def f(a, b):
-                ...
-            "#
-            .trim()
-        )
-        .finish()
-        .unwrap());
+        insta::assert_debug_snapshot!(
+            function_def(
+                r#"
+                def f(a, b):
+                    ...
+                "#.trim()
+            ).check_parsed(),
+            @r###"
+            FunctionDef {
+                name: "f",
+                args: Arguments {
+                    args: [
+                        Arg {
+                            name: "a",
+                            ty: None,
+                            default: None,
+                        },
+                        Arg {
+                            name: "b",
+                            ty: None,
+                            default: None,
+                        },
+                    ],
+                    positional_only: [],
+                    keyword_only: [],
+                    var_args: None,
+                    kw_args: None,
+                },
+                type_: None,
+                decorators: [],
+            }
+            "###
+        );
 
         // type hint
-        insta::assert_debug_snapshot!(function_def(
-            r#"
-            def g(x: int) -> str:
-                ...
-            "#
-            .trim()
-        )
-        .finish()
-        .unwrap());
+        insta::assert_debug_snapshot!(
+            function_def(
+                r#"
+                def g(x: int) -> str:
+                    ...
+                "#
+                .trim()
+            ).check_parsed(),
+            @r###"
+            FunctionDef {
+                name: "g",
+                args: Arguments {
+                    args: [
+                        Arg {
+                            name: "x",
+                            ty: Some(
+                                Name(
+                                    "int",
+                                ),
+                            ),
+                            default: None,
+                        },
+                    ],
+                    positional_only: [],
+                    keyword_only: [],
+                    var_args: None,
+                    kw_args: None,
+                },
+                type_: Name(
+                    "str",
+                ),
+                decorators: [],
+            }
+            "###
+        );
 
         // *arg
-        insta::assert_debug_snapshot!(function_def(
-            r#"
-            def g(*args) -> str:
-                ...
-            "#
-            .trim()
-        )
-        .finish()
-        .unwrap());
-
+        insta::assert_debug_snapshot!(
+            function_def(
+                r#"
+                def g(*args) -> str:
+                    ...
+                "#
+                .trim()
+            ).check_parsed(),
+            @r###"
+            FunctionDef {
+                name: "g",
+                args: Arguments {
+                    args: [],
+                    positional_only: [],
+                    keyword_only: [],
+                    var_args: Some(
+                        Arg {
+                            name: "args",
+                            ty: None,
+                            default: None,
+                        },
+                    ),
+                    kw_args: None,
+                },
+                type_: Name(
+                    "str",
+                ),
+                decorators: [],
+            }
+            "###
+        );
         // **keywords
-        insta::assert_debug_snapshot!(function_def(
+        insta::assert_debug_snapshot!(
+        function_def(
             r#"
             def g(**keywords) -> str:
                 ...
-            "#
-            .trim()
-        )
-        .finish()
-        .unwrap());
+            "#.trim()
+        ).check_parsed(), @r###"
+        FunctionDef {
+            name: "g",
+            args: Arguments {
+                args: [],
+                positional_only: [],
+                keyword_only: [],
+                var_args: None,
+                kw_args: Some(
+                    Arg {
+                        name: "keywords",
+                        ty: None,
+                        default: None,
+                    },
+                ),
+            },
+            type_: Name(
+                "str",
+            ),
+            decorators: [],
+        }
+        "###
+        );
 
         // Positional only
         insta::assert_debug_snapshot!(function_def(
             r#"
             def f(x, /, a=1):
                 ...
-            "#
-            .trim()
-        )
-        .finish()
-        .unwrap());
+            "#.trim()
+        ).check_parsed(), @r###"
+        FunctionDef {
+            name: "f",
+            args: Arguments {
+                args: [
+                    Arg {
+                        name: "a",
+                        ty: None,
+                        default: Some(
+                            Constant {
+                                value: Float(
+                                    1.0,
+                                ),
+                            },
+                        ),
+                    },
+                ],
+                positional_only: [
+                    Arg {
+                        name: "x",
+                        ty: None,
+                        default: None,
+                    },
+                ],
+                keyword_only: [],
+                var_args: None,
+                kw_args: None,
+            },
+            type_: None,
+            decorators: [],
+        }
+        "###
+        );
 
         // Keyword only
         insta::assert_debug_snapshot!(function_def(
             r#"
             def f(x, *, a=1):
                 ...
-            "#
-            .trim()
-        )
-        .finish()
-        .unwrap());
+            "#.trim()
+        ).check_parsed(), @r###"
+        FunctionDef {
+            name: "f",
+            args: Arguments {
+                args: [
+                    Arg {
+                        name: "x",
+                        ty: None,
+                        default: None,
+                    },
+                ],
+                positional_only: [],
+                keyword_only: [
+                    Arg {
+                        name: "a",
+                        ty: None,
+                        default: Some(
+                            Constant {
+                                value: Float(
+                                    1.0,
+                                ),
+                            },
+                        ),
+                    },
+                ],
+                var_args: None,
+                kw_args: None,
+            },
+            type_: None,
+            decorators: [],
+        }
+        "###
+        );
 
         // Combined
         insta::assert_debug_snapshot!(function_def(
@@ -224,9 +416,45 @@ mod test {
                 ...
             "#
             .trim()
-        )
-        .finish()
-        .unwrap());
+        ).check_parsed(), @r###"
+        FunctionDef {
+            name: "f",
+            args: Arguments {
+                args: [
+                    Arg {
+                        name: "y",
+                        ty: None,
+                        default: None,
+                    },
+                ],
+                positional_only: [
+                    Arg {
+                        name: "x",
+                        ty: None,
+                        default: None,
+                    },
+                ],
+                keyword_only: [
+                    Arg {
+                        name: "a",
+                        ty: None,
+                        default: Some(
+                            Constant {
+                                value: Float(
+                                    1.0,
+                                ),
+                            },
+                        ),
+                    },
+                ],
+                var_args: None,
+                kw_args: None,
+            },
+            type_: None,
+            decorators: [],
+        }
+        "###
+        );
 
         // decorators
         insta::assert_debug_snapshot!(function_def(
@@ -234,11 +462,37 @@ mod test {
             @staticmethod
             def f(a, b):
                 ...
-            "#
-            .trim()
-        )
-        .finish()
-        .unwrap());
+            "#.trim()
+        ).check_parsed(), @r###"
+        FunctionDef {
+            name: "f",
+            args: Arguments {
+                args: [
+                    Arg {
+                        name: "a",
+                        ty: None,
+                        default: None,
+                    },
+                    Arg {
+                        name: "b",
+                        ty: None,
+                        default: None,
+                    },
+                ],
+                positional_only: [],
+                keyword_only: [],
+                var_args: None,
+                kw_args: None,
+            },
+            type_: None,
+            decorators: [
+                Name {
+                    id: "staticmethod",
+                },
+            ],
+        }
+        "###
+        );
 
         // decorators with arguments
         insta::assert_debug_snapshot!(function_def(
@@ -246,10 +500,51 @@ mod test {
             @deco(1, "test")
             def f(a, b):
                 ...
-            "#
-            .trim()
-        )
-        .finish()
-        .unwrap());
+            "#.trim()
+        ).check_parsed(), @r###"
+        FunctionDef {
+            name: "f",
+            args: Arguments {
+                args: [
+                    Arg {
+                        name: "a",
+                        ty: None,
+                        default: None,
+                    },
+                    Arg {
+                        name: "b",
+                        ty: None,
+                        default: None,
+                    },
+                ],
+                positional_only: [],
+                keyword_only: [],
+                var_args: None,
+                kw_args: None,
+            },
+            type_: None,
+            decorators: [
+                Call {
+                    func: Name {
+                        id: "deco",
+                    },
+                    args: [
+                        Constant {
+                            value: Float(
+                                1.0,
+                            ),
+                        },
+                        Constant {
+                            value: String(
+                                "test",
+                            ),
+                        },
+                    ],
+                    keywords: [],
+                },
+            ],
+        }
+        "###
+        );
     }
 }
