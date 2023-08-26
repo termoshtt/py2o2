@@ -141,11 +141,7 @@ pub enum Constant<'input> {
 }
 
 pub fn constant(input: &str) -> ParseResult<Constant> {
-    alt((
-        double.map(|f| Constant::Float(f)),
-        string.map(|s| Constant::String(s)),
-    ))
-    .parse(input)
+    alt((double.map(Constant::Float), string.map(Constant::String))).parse(input)
 }
 
 pub fn expr_tuple(input: &str) -> ParseResult<Vec<Expr>> {
