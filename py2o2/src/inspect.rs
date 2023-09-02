@@ -63,10 +63,17 @@ pub struct TypeDefinition {
     pub supertype: Type,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+pub struct Class {
+    pub name: String,
+    pub module: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Interface {
     pub functions: BTreeMap<String, Function>,
-    pub type_definitions: BTreeMap<String, TypeDefinition>,
+    pub newtypes: BTreeMap<String, TypeDefinition>,
+    pub classes: BTreeMap<String, Class>,
 }
 
 impl Interface {
@@ -94,6 +101,12 @@ pub fn get_inspect_json(target: &str) -> Result<String> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn deserialize_entire_interface_of_ast_module() {
+        let interface = Interface::from_py_module("ast").unwrap();
+        dbg!(interface);
+    }
 
     #[test]
     fn deserialize_type() -> Result<()> {

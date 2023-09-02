@@ -50,7 +50,7 @@ def type_as_tag(ty: type) -> dict:
 
 def inspect_module(target: str) -> str:
     module = importlib.import_module(target)
-    interface = {"functions": {}, "type_definitions": {}}
+    interface = {"functions": {}, "newtypes": {}, "classes": {}}
     for name, attr in inspect.getmembers(module):
         if inspect.isfunction(attr):
             sig = inspect.signature(getattr(module, name))
@@ -63,10 +63,15 @@ def inspect_module(target: str) -> str:
                 "return": type_as_tag(sig.return_annotation),
             }
         if type(attr) == typing.NewType:
-            interface["type_definitions"][name] = {
+            interface["newtypes"][name] = {
                 "module": attr.__module__,
                 "name": attr.__name__,
                 "supertype": type_as_tag(attr.__supertype__),
+            }
+        if type(attr) == type:
+            interface["classes"][name] = {
+                "module": attr.__module__,
+                "name": attr.__name__,
             }
     return json.dumps(interface, indent=4)
 

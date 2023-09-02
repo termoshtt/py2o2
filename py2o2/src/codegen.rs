@@ -201,7 +201,7 @@ pub fn generate(module_name: &str, interface: &Interface, bare: bool) -> Result<
         .map(|f| generate_function(module_name, f))
         .collect::<Result<Vec<_>>>()?;
     let typedef_tt = interface
-        .type_definitions
+        .newtypes
         .values()
         .map(generate_type_definitions)
         .collect::<Result<Vec<_>>>()?;
