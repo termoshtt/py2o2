@@ -1,12 +1,13 @@
 use crate::inspect::*;
 use anyhow::Result;
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::quote;
+use quote::{format_ident, quote};
 use std::collections::{hash_map::DefaultHasher, BTreeMap};
 use std::hash::{Hash, Hasher};
 
 fn format(tt: TokenStream2) -> String {
-    prettyplease::unparse(&syn::parse_file(&tt.to_string()).unwrap())
+    let parsed = &syn::parse_file(&tt.to_string()).unwrap();
+    prettyplease::unparse(parsed)
 }
 
 fn union_trait_ident(args: &[Type]) -> syn::Ident {
@@ -87,14 +88,20 @@ pub fn as_output_type(ty: &Type) -> syn::Type {
     }
 }
 
+pub fn as_ident(name: &str) -> syn::Ident {
+    const RUST_KEYWORDS: &[&str] = &["self"];
+    for keyword in RUST_KEYWORDS {
+        if name == *keyword {
+            return format_ident!("_{}", name);
+        }
+    }
+    syn::Ident::new(name, Span::call_site())
+}
+
 pub fn generate_function(module_name: &str, f: &Function) -> Result<TokenStream2> {
     let name = &f.name;
     let ident = syn::Ident::new(name, Span::call_site());
-    let param_names: Vec<_> = f
-        .parameters
-        .iter()
-        .map(|p| syn::Ident::new(&p.name, Span::call_site()))
-        .collect();
+    let param_names: Vec<_> = f.parameters.iter().map(|p| as_ident(&p.name)).collect();
     let param_types: Vec<syn::Type> = f
         .parameters
         .iter()
