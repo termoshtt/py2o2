@@ -1,39 +1,55 @@
 use pyo3::{exceptions::PyTypeError, prelude::*, type_object::PyTypeInfo, types::*, PyNativeType};
 use std::fmt;
 
-pub struct Module(Py<PyAny>);
-unsafe impl PyNativeType for Module {}
-unsafe impl PyTypeInfo for Module {
-    const NAME: &'static str = "Module";
-    const MODULE: Option<&'static str> = Some("ast");
-    type AsRefTarget = Self;
-    fn type_object_raw(py: Python<'_>) -> *mut pyo3::ffi::PyTypeObject {
-        let typ: &PyType = py
-            .import("ast")
-            .expect("ast module must exists")
-            .getattr("Module")
-            .expect("ast.Module not found")
-            .extract()
-            .expect("ast.Module must be a type");
-        typ.as_type_ptr()
-    }
-}
+macro_rules! import_pytype {
+    ($pymodule:literal, $pytype:ident) => {
+        pub struct $pytype(Py<PyAny>);
 
-impl fmt::Debug for Module {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Py({})", self.0.to_string())
-    }
-}
-
-impl<'source> FromPyObject<'source> for Module {
-    fn extract(inner: &'source PyAny) -> PyResult<Self> {
-        if Module::is_exact_type_of(inner) {
-            Ok(Module(inner.into()))
-        } else {
-            Err(PyTypeError::new_err("Not a ast.Module"))
+        unsafe impl PyNativeType for $pytype {}
+        unsafe impl PyTypeInfo for $pytype {
+            const NAME: &'static str = stringify!($pytype);
+            const MODULE: Option<&'static str> = Some($pymodule);
+            type AsRefTarget = Self;
+            fn type_object_raw(py: Python<'_>) -> *mut pyo3::ffi::PyTypeObject {
+                let typ: &PyType = py
+                    .import($pymodule)
+                    .expect(&format!("Python module {} not found", $pymodule))
+                    .getattr(stringify!($pytype))
+                    .expect(&format!("Python type {} not found", stringify!($pytype)))
+                    .extract()
+                    .expect(&format!(
+                        "{}.{} is not a type",
+                        $pymodule,
+                        stringify!($pytype)
+                    ));
+                typ.as_type_ptr()
+            }
         }
-    }
+
+        impl ::std::fmt::Debug for $pytype {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "Py({})", self.0.to_string())
+            }
+        }
+
+        impl ::pyo3::FromPyObject<'_> for $pytype {
+            fn extract(inner: &PyAny) -> PyResult<Self> {
+                if Module::is_exact_type_of(inner) {
+                    Ok($pytype(inner.into()))
+                } else {
+                    Err(PyTypeError::new_err(format!(
+                        "Not a {}.{}",
+                        $pymodule,
+                        stringify!($pytype)
+                    )))
+                }
+            }
+        }
+    };
 }
+
+import_pytype!("ast", Module);
+import_pytype!("ast", Expression);
 
 pub fn parse(py: Python<'_>, input: &str) -> PyResult<Module> {
     let ast = py.import("ast")?;
