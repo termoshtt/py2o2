@@ -16,4 +16,9 @@ Cargo.lock
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 
+# Python
 __pycache__/
+
+# Jupyter
+Untitled*.ipynb
+.ipynb_checkpoints/
