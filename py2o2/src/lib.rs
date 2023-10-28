@@ -1,3 +1,4 @@
+pub mod ast;
 pub mod codegen;
 pub mod inspect;
 pub mod parser;
