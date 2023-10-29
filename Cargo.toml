@@ -4,6 +4,9 @@ default-members = ["py2o2", "py2o2-runtime"]
 resolver = "2"
 
 [workspace.dependencies]
+py2o2 = { "path" = "py2o2" }
+py2o2-runtime = { "path" = "py2o2-runtime" }
+
 anyhow = "1.0.71"
 clap = { version = "4.3.0", features = ["derive"] }
 insta = "1.29.0"
