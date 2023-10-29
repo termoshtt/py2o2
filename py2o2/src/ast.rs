@@ -80,6 +80,5 @@ mod tests {
             let m = parse(py, "def foo(): pass").unwrap();
             dbg!(m);
         });
-        panic!()
     }
 }
