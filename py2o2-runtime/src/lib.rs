@@ -1,6 +1,74 @@
 pub use pyo3;
-
 use pyo3::{conversion::*, exceptions::*, prelude::*, type_object::*, types::*};
+
+/// Types defined in Python user land (not in Python's runtime)
+///
+/// Different from [`pyo3::type_object::PyTypeInfo`],
+/// - this is safe trait since this does not require `AsRefTarget`
+/// - returns `PyResult<PyType>` to represent a case where given Python type does not exist.
+pub trait PyTypeInfoUser<const N: usize> {
+    const NAME: &'static str;
+    const MODULE: [&'static str; N];
+    fn type_object(py: Python<'_>) -> PyResult<&PyType>;
+
+    fn is_type_of(value: &PyAny) -> PyResult<bool> {
+        let py = value.py();
+        let ty = Self::type_object(py)?;
+        value.is_instance(ty)
+    }
+
+    fn is_exact_type_of(value: &PyAny) -> PyResult<bool> {
+        let py = value.py();
+        let ty = Self::type_object(py)?;
+        Ok(value.is_exact_instance(ty))
+    }
+
+    fn path() -> String {
+        let mut name = String::new();
+        for module in Self::MODULE.iter() {
+            name.push_str(module);
+            name.push('.');
+        }
+        name.push_str(Self::NAME);
+        name
+    }
+}
+
+#[macro_export]
+macro_rules! import_pytype {
+    ($pymodule:ident . $pytype:ident) => {
+        pub struct $pytype(::pyo3::Py<::pyo3::PyAny>);
+
+        impl PyTypeInfoUser<1> for $pytype {
+            const NAME: &'static str = stringify!($pytype);
+            const MODULE: [&'static str; 1] = [stringify!($pymodule)];
+            fn type_object(py: ::pyo3::Python<'_>) -> ::pyo3::PyResult<&::pyo3::types::PyType> {
+                let module = py.import(stringify!($pymodule))?;
+                let ty = module.getattr(stringify!($pytype))?;
+                ty.extract()
+            }
+        }
+
+        impl ::std::fmt::Debug for $pytype {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                write!(f, "Py({})", self.0.to_string())
+            }
+        }
+
+        impl ::pyo3::FromPyObject<'_> for $pytype {
+            fn extract(inner: &::pyo3::PyAny) -> ::pyo3::PyResult<Self> {
+                if Module::is_exact_type_of(inner)? {
+                    Ok($pytype(inner.into()))
+                } else {
+                    Err(::pyo3::exceptions::PyTypeError::new_err(format!(
+                        "Not a {}",
+                        Self::path()
+                    )))
+                }
+            }
+        }
+    };
+}
 
 pub trait AsPyType {
     fn is_type_of(obj: &PyAny) -> bool;
