@@ -9,7 +9,7 @@ use std::fmt;
 pub trait PyTypeInfoUser<const N: usize> {
     const NAME: &'static str;
     const MODULE: [&'static str; N];
-    fn type_object<'py>(py: Python<'py>) -> PyResult<&'py PyType>;
+    fn type_object(py: Python<'_>) -> PyResult<&PyType>;
 
     fn is_type_of(value: &PyAny) -> PyResult<bool> {
         let py = value.py();
@@ -31,7 +31,7 @@ macro_rules! import_pytype {
         impl PyTypeInfoUser<1> for $pytype {
             const NAME: &'static str = stringify!($pytype);
             const MODULE: [&'static str; 1] = [stringify!($pymodule)];
-            fn type_object<'py>(py: Python<'py>) -> PyResult<&'py PyType> {
+            fn type_object(py: Python<'_>) -> PyResult<&PyType> {
                 let module = py.import(stringify!($pymodule))?;
                 let ty = module.getattr(stringify!($pytype))?;
                 ty.extract()
