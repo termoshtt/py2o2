@@ -1,11 +1,15 @@
 use py2o2_runtime::{import_pytype, PyTypeInfoUser};
-use pyo3::{prelude::*, types::*};
+use pyo3::{exceptions::*, prelude::*, types::*};
 
 import_pytype!(ast.Module);
 
 impl<'py> Module<'py> {
-    pub fn body(&self) -> PyResult<&'py PyList> {
-        self.0.getattr("body")?.extract()
+    pub fn body(&self) -> PyResult<Vec<Statements<'py>>> {
+        let statments: &PyList = self.0.getattr("body")?.extract()?;
+        statments
+            .iter()
+            .map(|st| st.extract())
+            .collect::<PyResult<_>>()
     }
 }
 
@@ -29,6 +33,33 @@ impl<'py> FunctionDef<'py> {
     }
 }
 
+import_pytype!(ast.ImportFrom);
+import_pytype!(ast.Assign);
+
+#[derive(Debug)]
+pub enum Statements<'py> {
+    ImportFrom(ImportFrom<'py>),
+    FunctionDef(FunctionDef<'py>),
+    Assign(Assign<'py>),
+}
+
+impl<'py> FromPyObject<'py> for Statements<'py> {
+    fn extract(ob: &'py PyAny) -> PyResult<Self> {
+        if let Ok(import_from) = ob.extract() {
+            Ok(Statements::ImportFrom(import_from))
+        } else if let Ok(function_def) = ob.extract() {
+            Ok(Statements::FunctionDef(function_def))
+        } else if let Ok(assign) = ob.extract() {
+            Ok(Statements::Assign(assign))
+        } else {
+            Err(PyTypeError::new_err(format!(
+                "Expected a statement, {}",
+                ob.get_type(),
+            )))
+        }
+    }
+}
+
 pub fn parse<'py>(py: Python<'py>, input: &str) -> PyResult<Module<'py>> {
     let ast = py.import("ast")?;
     let parse = ast.getattr("parse")?;
@@ -45,9 +76,55 @@ mod tests {
         Python::with_gil(|py| -> PyResult<()> {
             let m = parse(py, "def foo(): pass")?;
             let body = m.body()?;
-            let elem = body.get_item(0)?;
-            let foo = elem.extract::<FunctionDef>()?;
-            dbg!(foo.name()?, foo.args()?, foo.returns()?);
+            if let Statements::FunctionDef(foo) = &body[0] {
+                assert_eq!(foo.name()?, "foo");
+            } else {
+                panic!()
+            }
+            Ok(())
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn test_parse_callable() {
+        Python::with_gil(|py| -> PyResult<()> {
+            let m = parse(py, include_str!("../../python/callable.py"))?;
+            let body = m.body()?;
+            dbg!(body);
+            Ok(())
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn test_parse_example() {
+        Python::with_gil(|py| -> PyResult<()> {
+            let m = parse(py, include_str!("../../python/example.py"))?;
+            let body = m.body()?;
+            dbg!(body);
+            Ok(())
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn test_parse_type_aliases() {
+        Python::with_gil(|py| -> PyResult<()> {
+            let m = parse(py, include_str!("../../python/type_aliases.py"))?;
+            let body = m.body()?;
+            dbg!(body);
+            Ok(())
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn test_parse_union() {
+        Python::with_gil(|py| -> PyResult<()> {
+            let m = parse(py, include_str!("../../python/union.py"))?;
+            let body = m.body()?;
+            dbg!(body);
             Ok(())
         })
         .unwrap();
