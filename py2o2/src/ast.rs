@@ -35,12 +35,14 @@ impl<'py> FunctionDef<'py> {
 
 import_pytype!(ast.ImportFrom);
 import_pytype!(ast.Assign);
+import_pytype!(ast.ClassDef);
 
 #[derive(Debug)]
 pub enum Statements<'py> {
     ImportFrom(ImportFrom<'py>),
     FunctionDef(FunctionDef<'py>),
     Assign(Assign<'py>),
+    ClassDef(ClassDef<'py>),
 }
 
 impl<'py> FromPyObject<'py> for Statements<'py> {
@@ -51,6 +53,8 @@ impl<'py> FromPyObject<'py> for Statements<'py> {
             Ok(Statements::FunctionDef(function_def))
         } else if let Ok(assign) = ob.extract() {
             Ok(Statements::Assign(assign))
+        } else if let Ok(class_def) = ob.extract() {
+            Ok(Statements::ClassDef(class_def))
         } else {
             Err(PyTypeError::new_err(format!(
                 "Expected a statement, {}",
@@ -123,6 +127,17 @@ mod tests {
     fn test_parse_union() {
         Python::with_gil(|py| -> PyResult<()> {
             let m = parse(py, include_str!("../../python/union.py"))?;
+            let body = m.body()?;
+            dbg!(body);
+            Ok(())
+        })
+        .unwrap();
+    }
+
+    #[test]
+    fn test_parse_user_defined() {
+        Python::with_gil(|py| -> PyResult<()> {
+            let m = parse(py, include_str!("../../python/user_defined.py"))?;
             let body = m.body()?;
             dbg!(body);
             Ok(())
