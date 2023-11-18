@@ -6,9 +6,9 @@ use pyo3::{conversion::*, exceptions::*, prelude::*, type_object::*, types::*};
 /// Different from [`pyo3::type_object::PyTypeInfo`],
 /// - this is safe trait since this does not require `AsRefTarget`
 /// - returns `PyResult<PyType>` to represent a case where given Python type does not exist.
-pub trait PyTypeInfoUser<const N: usize> {
+pub trait PyTypeInfoUser {
     const NAME: &'static str;
-    const MODULE: [&'static str; N];
+    const MODULE: &'static [&'static str];
     fn type_object(py: Python<'_>) -> PyResult<&PyType>;
 
     fn is_type_of(value: &PyAny) -> PyResult<bool> {
@@ -39,9 +39,9 @@ macro_rules! import_pytype {
     ($pymodule:ident . $pytype:ident) => {
         pub struct $pytype(::pyo3::Py<::pyo3::PyAny>);
 
-        impl PyTypeInfoUser<1> for $pytype {
+        impl PyTypeInfoUser for $pytype {
             const NAME: &'static str = stringify!($pytype);
-            const MODULE: [&'static str; 1] = [stringify!($pymodule)];
+            const MODULE: &'static [&'static str] = &[stringify!($pymodule)];
             fn type_object(py: ::pyo3::Python<'_>) -> ::pyo3::PyResult<&::pyo3::types::PyType> {
                 let module = py.import(stringify!($pymodule))?;
                 let ty = module.getattr(stringify!($pytype))?;
@@ -57,7 +57,7 @@ macro_rules! import_pytype {
 
         impl ::pyo3::FromPyObject<'_> for $pytype {
             fn extract(inner: &::pyo3::PyAny) -> ::pyo3::PyResult<Self> {
-                if Module::is_exact_type_of(inner)? {
+                if $pytype::is_exact_type_of(inner)? {
                     Ok($pytype(inner.into()))
                 } else {
                     Err(::pyo3::exceptions::PyTypeError::new_err(format!(
