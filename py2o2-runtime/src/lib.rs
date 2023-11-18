@@ -36,11 +36,11 @@ pub trait PyTypeInfoUser {
 
 #[macro_export]
 macro_rules! import_pytype {
-    ($pymodule:ident . $pytype:ident) => {
+    ($pymodule:ident . $pytype:ident as $rename:ident) => {
         #[derive(Debug)]
-        pub struct $pytype<'py>(&'py ::pyo3::PyAny);
+        pub struct $rename<'py>(&'py ::pyo3::PyAny);
 
-        impl<'py> PyTypeInfoUser for $pytype<'py> {
+        impl<'py> PyTypeInfoUser for $rename<'py> {
             const NAME: &'static str = stringify!($pytype);
             const MODULE: &'static [&'static str] = &[stringify!($pymodule)];
             fn type_object(py: ::pyo3::Python<'_>) -> ::pyo3::PyResult<&::pyo3::types::PyType> {
@@ -50,10 +50,10 @@ macro_rules! import_pytype {
             }
         }
 
-        impl<'py> ::pyo3::FromPyObject<'py> for $pytype<'py> {
+        impl<'py> ::pyo3::FromPyObject<'py> for $rename<'py> {
             fn extract(inner: &'py ::pyo3::PyAny) -> ::pyo3::PyResult<Self> {
-                if $pytype::is_exact_type_of(inner)? {
-                    Ok($pytype(inner))
+                if $rename::is_exact_type_of(inner)? {
+                    Ok($rename(inner))
                 } else {
                     Err(::pyo3::exceptions::PyTypeError::new_err(format!(
                         "Not a {}",
@@ -62,6 +62,10 @@ macro_rules! import_pytype {
                 }
             }
         }
+    };
+
+    ($pymodule:ident . $pytype:ident) => {
+        import_pytype!($pymodule.$pytype as $pytype);
     };
 }
 

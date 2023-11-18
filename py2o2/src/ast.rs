@@ -11,7 +11,7 @@ impl<'py> Module<'py> {
 
 import_pytype!(ast.Expression);
 
-import_pytype!(ast.arguments);
+import_pytype!(ast.arguments as Arguments);
 
 import_pytype!(ast.FunctionDef);
 
@@ -20,7 +20,7 @@ impl<'py> FunctionDef<'py> {
         self.0.getattr("name")?.extract()
     }
 
-    pub fn args(&self) -> PyResult<arguments> {
+    pub fn args(&self) -> PyResult<Arguments> {
         self.0.getattr("args")?.extract()
     }
 
