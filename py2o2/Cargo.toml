@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+py2o2-runtime.workspace = true
+
 anyhow.workspace = true
 clap.workspace = true
 nom.workspace = true

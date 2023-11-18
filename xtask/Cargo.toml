@@ -4,7 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+py2o2.workspace = true
 anyhow.workspace = true
-
-[dependencies.py2o2]
-path = "../py2o2"

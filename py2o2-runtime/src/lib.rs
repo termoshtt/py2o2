@@ -1,6 +1,73 @@
 pub use pyo3;
-
 use pyo3::{conversion::*, exceptions::*, prelude::*, type_object::*, types::*};
+
+/// Types defined in Python user land (not in Python's runtime)
+///
+/// Different from [`pyo3::type_object::PyTypeInfo`],
+/// - this is safe trait since this does not require `AsRefTarget`
+/// - returns `PyResult<PyType>` to represent a case where given Python type does not exist.
+pub trait PyTypeInfoUser {
+    const NAME: &'static str;
+    const MODULE: &'static [&'static str];
+    fn type_object(py: Python<'_>) -> PyResult<&PyType>;
+
+    fn is_type_of(value: &PyAny) -> PyResult<bool> {
+        let py = value.py();
+        let ty = Self::type_object(py)?;
+        value.is_instance(ty)
+    }
+
+    fn is_exact_type_of(value: &PyAny) -> PyResult<bool> {
+        let py = value.py();
+        let ty = Self::type_object(py)?;
+        Ok(value.is_exact_instance(ty))
+    }
+
+    fn path() -> String {
+        let mut name = String::new();
+        for module in Self::MODULE.iter() {
+            name.push_str(module);
+            name.push('.');
+        }
+        name.push_str(Self::NAME);
+        name
+    }
+}
+
+#[macro_export]
+macro_rules! import_pytype {
+    ($pymodule:ident . $pytype:ident as $rename:ident) => {
+        #[derive(Debug)]
+        pub struct $rename<'py>(&'py ::pyo3::PyAny);
+
+        impl<'py> PyTypeInfoUser for $rename<'py> {
+            const NAME: &'static str = stringify!($pytype);
+            const MODULE: &'static [&'static str] = &[stringify!($pymodule)];
+            fn type_object(py: ::pyo3::Python<'_>) -> ::pyo3::PyResult<&::pyo3::types::PyType> {
+                let module = py.import(stringify!($pymodule))?;
+                let ty = module.getattr(stringify!($pytype))?;
+                ty.extract()
+            }
+        }
+
+        impl<'py> ::pyo3::FromPyObject<'py> for $rename<'py> {
+            fn extract(inner: &'py ::pyo3::PyAny) -> ::pyo3::PyResult<Self> {
+                if $rename::is_exact_type_of(inner)? {
+                    Ok($rename(inner))
+                } else {
+                    Err(::pyo3::exceptions::PyTypeError::new_err(format!(
+                        "Not a {}",
+                        Self::path()
+                    )))
+                }
+            }
+        }
+    };
+
+    ($pymodule:ident . $pytype:ident) => {
+        import_pytype!($pymodule.$pytype as $pytype);
+    };
+}
 
 pub trait AsPyType {
     fn is_type_of(obj: &PyAny) -> bool;
