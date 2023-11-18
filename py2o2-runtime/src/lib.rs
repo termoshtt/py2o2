@@ -37,9 +37,10 @@ pub trait PyTypeInfoUser {
 #[macro_export]
 macro_rules! import_pytype {
     ($pymodule:ident . $pytype:ident) => {
-        pub struct $pytype(::pyo3::Py<::pyo3::PyAny>);
+        #[derive(Debug)]
+        pub struct $pytype<'py>(&'py ::pyo3::PyAny);
 
-        impl PyTypeInfoUser for $pytype {
+        impl<'py> PyTypeInfoUser for $pytype<'py> {
             const NAME: &'static str = stringify!($pytype);
             const MODULE: &'static [&'static str] = &[stringify!($pymodule)];
             fn type_object(py: ::pyo3::Python<'_>) -> ::pyo3::PyResult<&::pyo3::types::PyType> {
@@ -49,16 +50,10 @@ macro_rules! import_pytype {
             }
         }
 
-        impl ::std::fmt::Debug for $pytype {
-            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                write!(f, "Py({})", self.0.to_string())
-            }
-        }
-
-        impl ::pyo3::FromPyObject<'_> for $pytype {
-            fn extract(inner: &::pyo3::PyAny) -> ::pyo3::PyResult<Self> {
+        impl<'py> ::pyo3::FromPyObject<'py> for $pytype<'py> {
+            fn extract(inner: &'py ::pyo3::PyAny) -> ::pyo3::PyResult<Self> {
                 if $pytype::is_exact_type_of(inner)? {
-                    Ok($pytype(inner.into()))
+                    Ok($pytype(inner))
                 } else {
                     Err(::pyo3::exceptions::PyTypeError::new_err(format!(
                         "Not a {}",
