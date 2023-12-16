@@ -25,7 +25,11 @@ class StubLoader(ast.NodeVisitor):
     def visit_Assign(self, node: ast.Assign):
         print("Assign")
         print_code(node)
-        exec(ast.unparse(node), self.globals, self.locals)
+        all = self.globals.copy()
+        all.update(self.locals)
+        new_locals = {}
+        exec(ast.unparse(node), all, new_locals)
+        self.globals.update(new_locals)
 
     def visit_Try(self, node: ast.Try):
         print("Try")
@@ -49,6 +53,11 @@ class StubLoader(ast.NodeVisitor):
         finally:
             for st in node.finalbody:
                 self.visit(st)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef):
+        print("FunctionDef")
+        print_code(node)
+        exec(ast.unparse(node), self.globals, self.locals)
 
     def visit_Import(self, node: ast.Import):
         print("Import")
