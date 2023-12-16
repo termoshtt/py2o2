@@ -40,7 +40,7 @@ macro_rules! import_pytype {
         #[derive(Debug)]
         pub struct $rename<'py>(&'py ::pyo3::PyAny);
 
-        impl<'py> PyTypeInfoUser for $rename<'py> {
+        impl<'py> $crate::PyTypeInfoUser for $rename<'py> {
             const NAME: &'static str = stringify!($pytype);
             const MODULE: &'static [&'static str] = &[stringify!($pymodule)];
             fn type_object(py: ::pyo3::Python<'_>) -> ::pyo3::PyResult<&::pyo3::types::PyType> {
@@ -52,6 +52,7 @@ macro_rules! import_pytype {
 
         impl<'py> ::pyo3::FromPyObject<'py> for $rename<'py> {
             fn extract(inner: &'py ::pyo3::PyAny) -> ::pyo3::PyResult<Self> {
+                use $crate::PyTypeInfoUser;
                 if $rename::is_exact_type_of(inner)? {
                     Ok($rename(inner))
                 } else {
@@ -65,7 +66,7 @@ macro_rules! import_pytype {
     };
 
     ($pymodule:ident . $pytype:ident) => {
-        import_pytype!($pymodule.$pytype as $pytype);
+        $crate::import_pytype!($pymodule.$pytype as $pytype);
     };
 }
 

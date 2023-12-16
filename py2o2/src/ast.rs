@@ -1,4 +1,4 @@
-use py2o2_runtime::{import_pytype, PyTypeInfoUser};
+use py2o2_runtime::import_pytype;
 use pyo3::{exceptions::*, prelude::*, types::*};
 
 import_pytype!(ast.Module);

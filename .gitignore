@@ -22,3 +22,6 @@ __pycache__/
 # Jupyter
 Untitled*.ipynb
 .ipynb_checkpoints/
+
+# pyright
+typings/

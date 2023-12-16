@@ -1,5 +1,6 @@
 pub mod ast;
 pub mod codegen;
+pub mod importlib;
 pub mod inspect;
 pub mod parser;
 
